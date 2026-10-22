@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Security policy: only Google (fonts, Gemini) and cdnjs are allowed. The inline script is allowed by its hash;
+     after editing that script, recompute the hash (README explains how) or the page will stop working. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AGtCTM0yYurloefloMuOCgeIxO0FreK9gR9vMm2orv0=' https://cdnjs.cloudflare.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://generativelanguage.googleapis.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>منشئ سيرة ATS</title>
+<meta name="description" content="أنشئ سيرة ذاتية متوافقة مع أنظمة ATS، وابحث عن شركات التدريب التعاوني وراسلها برسائل مخصصة مع سيرتك.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;600&family=Arimo:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap">
+<style>
+/* Layout: main nav (CV / co-op / settings). CV = editor pane + sticky result pane; co-op = three numbered steps. Paper stays white in both themes. */
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --surface-2:#E9EDF4; --line:#D4DBE6;
+  --fg:#152030; --muted:#586477;
+  --accent:#2347C5; --accent-ink:#FFFFFF; --accent-soft:#E2E8FA;
+  --hl:#FFE36E; --hl-ink:#352B00;
+  --good:#1D7F47; --good-soft:#DCF2E4; --warn:#9A5B00; --warn-soft:#FAEBCF; --bad:#BC3328; --bad-soft:#F8DDD9;
+  --paper:#FFFFFF; --paper-ink:#121212; --paper-muted:#454545; --paper-shadow:rgba(20,32,56,.12);
+  --f-display:"Readex Pro","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --f-paper:"Arimo",Arial,"Liberation Sans",Helvetica,sans-serif;
+  --f-paper-ar:"Noto Sans Arabic",Arial,Tahoma,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0E131B; --surface:#151C27; --surface-2:#1D2633; --line:#2B3645;
+  --fg:#E5EAF2; --muted:#97A3B6;
+  --accent:#86A2FF; --accent-ink:#0A1022; --accent-soft:#1E2947;
+  --hl:#EBC94B; --hl-ink:#231C00;
+  --good:#52C98C; --good-soft:#12301F; --warn:#F0B257; --warn-soft:#38290F; --bad:#FF7E72; --bad-soft:#3B1916;
+  --paper-shadow:rgba(0,0,0,.55);
+  color-scheme:dark}}
+
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
+button{font:inherit;color:inherit}
+a{color:var(--accent)}
+[hidden]{display:none!important}
+.shell{max-width:1440px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px;display:flex;flex-direction:column;gap:14px}
+.sec{display:flex;flex-direction:column;gap:14px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{font-family:var(--f-mono);font-weight:600;font-size:13px;letter-spacing:.1em;background:var(--fg);color:var(--bg);padding:7px 9px 9px;border-radius:6px;position:relative;line-height:1}
+.mark::after{content:"";position:absolute;inset-inline:6px;bottom:4px;height:3px;border-radius:2px;background:var(--hl)}
+.brand h1{font-family:var(--f-display);font-weight:600;font-size:21px;margin:0;line-height:1.25;text-wrap:balance}
+.brand p{margin:0;color:var(--muted);font-size:13.5px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.toolbar .sp{flex:1}
+.lang-note{font-size:12px;color:var(--muted)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--surface);gap:2px;max-width:100%;overflow-x:auto}
+.seg button{border:0;background:none;padding:6px 13px;border-radius:6px;cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.score-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--muted)}
+.score-chip b{font-family:var(--f-mono);font-size:16px;color:var(--st,var(--fg))}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:7px 13px;font-size:14px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn.ai{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.55;cursor:progress}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 14px;border-radius:10px;background:var(--accent-soft);font-size:14px}
+.banner strong{font-weight:600}
+.banner .sp{flex:1 1 200px;min-width:0}
+
+.mobile-switch{display:none;width:100%}
+.mobile-switch button{flex:1}
+
+/* panes */
+.app{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.tabs{display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid var(--line);padding:4px 8px 0;scrollbar-width:thin;flex-shrink:0}
+.tabs button{background:none;border:0;padding:11px 14px;font-size:14.5px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.tabs .count{font-family:var(--f-mono);font-size:11px;background:var(--surface-2);border-radius:5px;padding:0 5px;color:var(--muted)}
+
+.form-body{padding:18px;display:flex;flex-direction:column;gap:16px}
+.form-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 18px 10px}
+.form-foot .sp{flex:1}
+.foot-note{margin:0;padding:0 18px 18px;font-size:12.5px;color:var(--muted)}
+.sec-title{font-family:var(--f-display);font-weight:500;font-size:16px;margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 14px}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fld.wide{grid-column:1/-1}
+.lbl{font-size:13px;color:var(--muted);font-weight:500}
+.lbl em{font-style:normal;font-weight:400;opacity:.85;margin-inline-start:6px;font-size:12px}
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=month],input[type=number],input[type=password],select,textarea{font:inherit;font-size:14.5px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical;line-height:1.6}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input:disabled{opacity:.45}
+.chk,.radio{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);cursor:pointer;padding-top:4px}
+.chk input,.radio input{width:16px;height:16px;accent-color:var(--accent);flex:none}
+.radio{color:var(--fg);font-size:14px}
+.counter{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.status-line{font-size:13.5px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.row .sp{flex:1}
+
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
+.card-head{display:flex;align-items:center;gap:6px}
+.card-head strong{font-family:var(--f-display);font-weight:500;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:7px;cursor:pointer;font-size:15px;line-height:1;flex:none}
+.icon-btn:hover{color:var(--fg);border-color:var(--accent)}
+.icon-btn:disabled{opacity:.35;cursor:default}
+.tip{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:10px 12px;line-height:1.65;margin:0}
+.tip b{color:var(--fg);font-weight:600}
+.ai-box{border:1px dashed var(--accent);background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.ai-box ul{margin:0;padding-inline-start:18px}
+.ltr{direction:ltr;text-align:left}
+.skill-chips{display:flex;flex-wrap:wrap;gap:6px}
+.skill-chips span{font-size:13px;padding:2px 9px;border-radius:6px;background:var(--surface-2)}
+
+/* result pane */
+.result{display:flex;flex-direction:column}
+.result-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.result-head .lbl{margin-inline-end:auto}
+.exports{display:flex;flex-wrap:wrap;gap:6px}
+.panel{padding:16px;display:flex;flex-direction:column;gap:14px}
+.preview-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.preview-bar .sp{flex:1}
+.preview-wrap{background:var(--surface-2);border-radius:10px;padding:18px}
+.paper{background:var(--paper);color:var(--paper-ink);max-width:794px;margin:0 auto;padding:44px 50px;box-shadow:0 1px 2px var(--paper-shadow),0 10px 28px var(--paper-shadow);font-family:var(--f-paper);font-size:13px;line-height:1.45;min-height:420px;overflow-wrap:anywhere;text-align:start}
+.paper.ar{font-family:var(--f-paper-ar);line-height:1.6}
+.paper h2,.paper h3,.paper p,.paper ul{margin:0}
+.cv-name{font-size:24px;font-weight:700;line-height:1.2;margin-bottom:2px!important}
+.cv-title{font-size:14.5px;margin-bottom:3px!important}
+.cv-contact{font-size:12px;color:var(--paper-muted);margin-bottom:8px!important}
+.cv-h{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--paper-ink);padding-bottom:2px;margin:14px 0 6px!important}
+.paper.ar .cv-h{text-transform:none;letter-spacing:0;font-size:14px}
+.cv-p{margin-bottom:4px!important}
+.cv-role{font-weight:700;margin-top:8px!important}
+.cv-meta{color:var(--paper-muted);font-size:12.5px;margin-bottom:2px!important}
+.paper ul{padding-inline-start:18px;margin-bottom:4px}
+.paper li{margin:1px 0}
+.cv-empty{color:var(--paper-muted);text-align:center;padding-top:120px}
+mark{background:var(--hl);color:inherit;border-radius:2px;padding:0 1px}
+
+.score-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px 22px}
+.gauge{position:relative;width:118px;height:118px;flex:none}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .trk{fill:none;stroke:var(--surface-2);stroke-width:10}
+.gauge .val{fill:none;stroke:var(--st,var(--accent));stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+.gauge .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:30px;color:var(--fg);line-height:1}
+.gauge .num small{display:block;font-size:11px;color:var(--muted);font-weight:500;text-align:center;margin-top:4px}
+.verdict{min-width:0;flex:1 1 220px}
+.verdict h3{font-family:var(--f-display);font-weight:500;font-size:18px;margin:0 0 4px;text-wrap:balance}
+.verdict p{margin:0;color:var(--muted);font-size:13.5px}
+.tally{display:flex;flex-wrap:wrap;gap:6px}
+.verdict .tally{margin-top:8px}
+.checks{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.checks li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 12px;padding:11px 2px;border-bottom:1px solid var(--line);align-items:start}
+.checks strong{font-weight:600;font-size:14px}
+.checks p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.checks .btn{margin-top:7px}
+.pill{justify-self:start;font-size:12px;padding:2px 9px;border-radius:999px;font-weight:600;white-space:nowrap;background:var(--surface-2);color:var(--muted)}
+.s-pass .pill,.pill.s-pass{background:var(--good-soft);color:var(--good)}
+.s-warn .pill,.pill.s-warn{background:var(--warn-soft);color:var(--warn)}
+.s-fail .pill,.pill.s-fail{background:var(--bad-soft);color:var(--bad)}
+details.rules{font-size:13.5px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+details.rules summary{cursor:pointer;color:var(--fg);font-weight:500}
+details.rules ul{margin:8px 0 2px;padding-inline-start:18px;display:flex;flex-direction:column;gap:3px;overflow-wrap:anywhere}
+.fix-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.meter{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--st,var(--accent));border-radius:99px;transition:width .4s ease}
+.cov{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cov b{font-family:var(--f-mono);font-size:26px;font-weight:600}
+.cov span{color:var(--muted);font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;line-height:1.5}
+.chip.hit{background:var(--hl);color:var(--hl-ink);border-color:transparent}
+.chip.miss{border-style:dashed;cursor:pointer}
+.chip.miss:hover{border-color:var(--accent);color:var(--accent)}
+.chip.miss::before{content:"+ ";color:var(--accent)}
+.kw-h{font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:500}
+.empty{color:var(--muted);font-size:13.5px;margin:0}
+
+/* co-op + settings */
+.narrow{max-width:960px;width:100%;margin:0 auto}
+.intro h2{font-family:var(--f-display);font-weight:600;font-size:20px;margin:0 0 4px;text-wrap:balance}
+.intro p{margin:0;color:var(--muted);max-width:70ch}
+.step{padding:18px;display:flex;flex-direction:column;gap:14px}
+.step-h{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.step-h h3{font-family:var(--f-display);font-weight:500;font-size:17px;margin:0}
+.step-h .sp{flex:1}
+.step-n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-family:var(--f-mono);font-weight:600;font-size:14px;flex:none}
+.co-list{display:flex;flex-direction:column;gap:12px}
+.co-meta{margin:0;color:var(--muted);font-size:13.5px}
+.co-err{margin:0;color:var(--bad);font-size:13px}
+.co .msg{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:12px}
+.co.is-off{opacity:.62}
+.empty-state{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:14px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.mode{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.mode h4{margin:0;font-size:15px;font-weight:600}
+.mode p{margin:0;color:var(--muted);font-size:13.5px}
+.steps-list{margin:0;padding-inline-start:20px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.src-list{margin:8px 0 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+
+.job-links{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.site-foot{border-top:1px solid var(--line);margin-top:10px;padding-top:16px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.site-foot p{margin:0;max-width:80ch}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:9px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (min-width:1000px){
+  .app{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);align-items:start}
+  .result{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow:auto}
+  /* the pane has a fixed height here, so its rows must not shrink, and the tabs stay pinned while it scrolls */
+  .result > *{flex-shrink:0}
+  #resTabs{position:sticky;top:0;z-index:2;background:var(--surface)}
+}
+@media (max-width:999px){
+  /* stays reachable while scrolling, so the student can always get back to the editor or the preview */
+  .mobile-switch{display:flex;position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:6;box-shadow:0 6px 18px var(--paper-shadow)}
+  .app[data-view="edit"] .result{display:none}
+  .app[data-view="result"] .editor{display:none}
+}
+@media (max-width:560px){
+  .paper{padding:24px 18px;font-size:12px}
+  .cv-name{font-size:20px}
+  .preview-wrap{padding:8px}
+  .checks li{grid-template-columns:minmax(0,1fr)}
+  .brand h1{font-size:18px}
+  .step{padding:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">ATS</span>
+      <div>
+        <h1>منشئ سيرة ATS</h1>
+        <p>سيرة تقرؤها أنظمة فرز المتقدمين، وفرص تدريب تعاوني تقدّم عليها مباشرة</p>
+      </div>
+    </div>
+    <nav class="seg" id="mainNav" aria-label="الأقسام">
+      <button type="button" data-sec="cv" aria-pressed="true">السيرة الذاتية</button>
+      <button type="button" data-sec="coop" aria-pressed="false">التدريب التعاوني</button>
+      <button type="button" data-sec="settings" aria-pressed="false">الإعدادات</button>
+    </nav>
+  </header>
+
+  <!-- ============ CV ============ -->
+  <section class="sec" id="sec-cv">
+    <div class="toolbar">
+      <span class="lang-note">لغة السيرة</span>
+      <div class="seg" role="group" aria-label="لغة السيرة" id="langSeg">
+        <button type="button" data-lang="en" aria-pressed="true">English</button>
+        <button type="button" data-lang="ar" aria-pressed="false">عربي</button>
+      </div>
+      <button type="button" class="score-chip" id="scoreChip" title="عرض فحص ATS">درجة ATS <b id="scoreChipVal">0</b></button>
+    </div>
+
+    <div class="banner" id="sampleBanner" hidden>
+      <span class="sp"><strong>هذه بيانات مثال.</strong> عدّلها ببياناتك، أو ابدأ بنموذج فارغ.</span>
+      <button type="button" class="btn small" id="startBlank">ابدأ من الصفر</button>
+      <button type="button" class="btn small" id="hideBanner">إخفاء</button>
+    </div>
+
+    <nav class="seg mobile-switch" id="viewSeg" aria-label="العرض">
+      <button type="button" data-view="edit" aria-pressed="true">تحرير</button>
+      <button type="button" data-view="result" aria-pressed="false">المعاينة والفحص</button>
+    </nav>
+
+    <main class="app" id="app" data-view="edit">
+      <section class="pane editor" aria-label="تحرير السيرة">
+        <div class="tabs" role="tablist" id="formTabs"></div>
+        <div class="form-body" id="formBody"></div>
+        <div class="form-foot">
+          <button type="button" class="btn small primary" id="backupSave">حفظ نسخة احتياطية</button>
+          <button type="button" class="btn small" id="backupLoad">استرجاع نسخة</button>
+          <input type="file" id="backupFile" accept=".json,application/json" hidden>
+          <span class="sp"></span>
+          <button type="button" class="btn small" id="loadSample">تحميل المثال</button>
+          <button type="button" class="btn small danger" id="clearAll">مسح كل البيانات</button>
+        </div>
+        <p class="foot-note">سيرتك تُحفظ تلقائياً في هذا المتصفح فقط. لنقلها إلى جهاز آخر، احفظ نسخة احتياطية ثم استرجعها هناك.</p>
+      </section>
+
+      <section class="pane result" aria-label="النتيجة">
+        <div class="result-head">
+          <span class="lbl">تنزيل السيرة</span>
+          <div class="exports">
+            <button type="button" class="btn small primary" id="dlDocx">Word ‎(.docx)</button>
+            <button type="button" class="btn small" id="dlPdf">PDF</button>
+            <button type="button" class="btn small" id="dlTxt">نص ‎(.txt)</button>
+            <button type="button" class="btn small" id="copyTxt">نسخ النص</button>
+          </div>
+        </div>
+        <div class="tabs" role="tablist" id="resTabs">
+          <button type="button" role="tab" data-rtab="preview" aria-selected="true">المعاينة</button>
+          <button type="button" role="tab" data-rtab="check" aria-selected="false">فحص ATS</button>
+          <button type="button" role="tab" data-rtab="match" aria-selected="false">مطابقة الوظيفة</button>
+        </div>
+
+        <div class="panel" id="panel-preview">
+          <div class="preview-bar">
+            <span id="pageEst"></span>
+            <span class="sp"></span>
+            <label class="chk"><input type="checkbox" id="hlToggle" checked> تظليل كلمات الوظيفة</label>
+          </div>
+          <div class="preview-wrap"><article class="paper" id="paper"></article></div>
+        </div>
+
+        <div class="panel" id="panel-check" hidden>
+          <div class="row">
+            <button type="button" class="btn small" id="backToCv">عرض السيرة</button>
+            <button type="button" class="btn small" id="backToEdit">تحرير السيرة</button>
+          </div>
+          <div class="score-head">
+            <div class="gauge" id="gauge">
+              <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="trk" cx="60" cy="60" r="50"></circle><circle class="val" id="gaugeVal" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"></circle></svg>
+              <div class="num"><div><span id="gaugeNum">0</span><small>من 100</small></div></div>
+            </div>
+            <div class="verdict">
+              <h3 id="verdictH"></h3>
+              <p id="verdictP"></p>
+              <div class="tally" id="tally"></div>
+            </div>
+          </div>
+          <div class="fix-row">
+            <button type="button" class="btn small" id="quickClean">تنظيف سريع بدون ذكاء اصطناعي</button>
+          </div>
+          <ul class="checks" id="checks"></ul>
+          <details class="rules">
+            <summary>ما تضمنه الأداة تلقائياً في الملف</summary>
+            <ul>
+              <li>عمود واحد بدون جداول أو أعمدة جانبية أو مربعات نص أو صور.</li>
+              <li>عناوين أقسام قياسية يعرفها أي نظام: Work Experience و Education و Skills.</li>
+              <li>خط Arial ونص حقيقي قابل للتحديد والنسخ، وقوائم نقطية حقيقية في Word.</li>
+              <li>بيانات التواصل في متن الصفحة، لا في رأس الصفحة الذي تتجاهله بعض الأنظمة.</li>
+              <li>اسمك وعنوان السيرة في خصائص الملف، واسم ملف واضح مثل Omar_Al-Saleh_Resume.docx.</li>
+            </ul>
+          </details>
+        </div>
+
+        <div class="panel" id="panel-match" hidden>
+          <label class="fld" for="jdInput">
+            <span class="lbl">الوصف الوظيفي<em>الصق نص إعلان الوظيفة التي تتقدم لها</em></span>
+            <textarea id="jdInput" rows="7" dir="auto" placeholder="Paste the job description here…"></textarea>
+          </label>
+          <div class="row">
+            <button type="button" class="btn small" id="sampleJd">وصف وظيفي للتجربة</button>
+            <button type="button" class="btn small" id="clearJd">مسح الوصف</button>
+          </div>
+          <div id="matchOut"></div>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <!-- ============ CO-OP ============ -->
+  <section class="sec narrow" id="sec-coop" hidden>
+    <div class="intro">
+      <h2>التدريب التعاوني</h2>
+      <p>ابحث عن فرص التدريب المنشورة لتخصصك وقدّم عليها مباشرة، وانسخ رسالة تغطية جاهزة باسمك.</p>
+    </div>
+
+    <div class="pane step">
+      <div class="step-h"><span class="step-n">1</span><h3>ابحث عن الفرص وقدّم مباشرة</h3></div>
+      <p class="empty" style="color:var(--muted)">اكتب تخصصك ومدينتك واضغط أي زر: تنفتح لك فرص التدريب التعاوني لتخصصك، الأحدث أولاً، وتقدّم منها مباشرة.</p>
+      <div class="grid2">
+        <label class="fld" for="job-major"><span class="lbl">التخصص</span><input type="text" id="job-major" placeholder="مثال: نظم المعلومات"></label>
+        <label class="fld" for="job-city"><span class="lbl">المدينة<em>اختياري</em></span><input type="text" id="job-city" placeholder="مثال: الرياض"></label>
+      </div>
+      <div class="job-links" id="jobLinks"></div>
+      <p class="tip">زر <b>Easy Apply</b> يعرض فقط الفرص التي تقدّم عليها بضغطة واحدة بملفك في LinkedIn، فأكمل ملفك وارفع سيرتك عليه أولاً. وفي LinkedIn اضغط <b>Set alert</b> فوق النتائج ليصلك إشعار بكل فرصة جديدة.</p>
+    </div>
+
+    <div class="pane step">
+      <div class="step-h"><span class="step-n">2</span><h3>رسالة التغطية</h3></div>
+      <p class="empty" style="color:var(--muted)">رسالة رسمية جاهزة باسمك وتخصصك ومهاراتك. الصقها في خانة رسالة التغطية (Cover letter) عند التقديم، أو أرسلها مع سيرتك لأي شركة.</p>
+      <div class="grid2" id="coverForm">
+        <label class="fld" for="cp-university"><span class="lbl">الجامعة</span><input type="text" id="cp-university" data-cp="university" placeholder="مثال: جامعة الملك سعود"></label>
+        <label class="fld" for="cp-start"><span class="lbl">بداية التدريب<em>اختياري</em></span><input type="text" id="cp-start" data-cp="start" placeholder="مثال: يناير 2027"></label>
+        <label class="fld" for="cp-duration"><span class="lbl">مدة التدريب<em>اختياري</em></span><input type="text" id="cp-duration" data-cp="duration" placeholder="مثال: 8 أسابيع"></label>
+        <label class="fld" for="cp-lang"><span class="lbl">لغة الرسالة</span>
+          <select id="cp-lang" data-cp="lang"><option value="ar">العربية</option><option value="en">English</option></select></label>
+      </div>
+      <label class="fld" for="coverText"><span class="lbl">الرسالة<em>تقدر تعدّلها قبل النسخ</em></span><textarea id="coverText" rows="13"></textarea></label>
+      <div class="row">
+        <button type="button" class="btn primary" id="copyCover">نسخ الرسالة</button>
+        <button type="button" class="btn" id="dlCv">نزّل سيرتي (Word)</button>
+        <span class="sp"></span>
+        <button type="button" class="btn small" id="resetCover">إعادة كتابة الرسالة من بياناتي</button>
+      </div>
+      <p class="tip">الاسم والجوال والإيميل والمهارات تؤخذ من قسم <b>السيرة الذاتية</b>، فأكملها أولاً.</p>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="sec narrow" id="sec-settings" hidden>
+    <div class="intro">
+      <h2>الإعدادات</h2>
+      <p>كل الإعدادات تُحفظ في متصفحك فقط، ولا تمر على أي خادم غير خوادم Google.</p>
+    </div>
+    <div class="pane step">
+      <div class="step-h"><h3>مفتاح Gemini المجاني</h3></div>
+      <ol class="steps-list">
+        <li>افتح <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> وسجّل الدخول بحساب Google.</li>
+        <li>اضغط Create API key، وانسخ المفتاح.</li>
+        <li>الصقه هنا واضغط حفظ، ثم «اختبار المفتاح». يُستخدم المفتاح لكتابة الإنجازات والملخص فقط.</li>
+      </ol>
+      <div class="grid2">
+        <label class="fld" for="setKey"><span class="lbl">المفتاح</span><input type="password" id="setKey" dir="ltr" autocomplete="off" spellcheck="false" placeholder="AIza…"></label>
+        <label class="fld" for="setModel"><span class="lbl">النموذج<em>اتركه كما هو غالباً</em></span><input type="text" id="setModel" dir="ltr" spellcheck="false"></label>
+      </div>
+      <div class="row">
+        <button type="button" class="btn primary" id="saveKey">حفظ</button>
+        <button type="button" class="btn" id="testKey">اختبار المفتاح</button>
+        <button type="button" class="btn danger" id="delKey">حذف المفتاح</button>
+        <span class="status-line" id="keyStatus"></span>
+      </div>
+      <p class="tip">الخطة المجانية لها حد يومي وحد بالدقيقة؛ إذا ظهرت رسالة «وصلت للحد» انتظر دقيقة. في الخطة المجانية قد تستخدم Google ما ترسله لتحسين خدماتها، فلا تضع في السيرة بيانات لا تحتاجها مثل رقم الهوية.</p>
+    </div>
+  </section>
+
+  <footer class="site-foot">
+    <p lang="en" dir="ltr">ATS CV Builder helps students build an ATS-friendly CV and find co-op training openings. Everything runs in your browser.</p>
+    <nav><a href="privacy.html">سياسة الخصوصية · Privacy Policy</a> · <a href="https://github.com/M3XD-1/ats-cv" target="_blank" rel="noopener">GitHub</a></nav>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+(() => {
+"use strict";
+/* ===== Site owner config =====
+   DEFAULT_MODEL: Gemini model used when the visitor leaves the model field empty. */
+const CONFIG = { DEFAULT_MODEL: "gemini-flash-latest", FALLBACK_MODELS: ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"] };
+
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+};
+const STORE = "ats-cv-v1";
+
+/* ---------- data ---------- */
+const newExp = () => ({ id: uid(), title: "", company: "", location: "", start: "", end: "", current: false, bullets: "" });
+const newEdu = () => ({ id: uid(), degree: "", school: "", location: "", start: "", end: "", current: false, details: "" });
+const newProj = () => ({ id: uid(), name: "", link: "", bullets: "" });
+const blank = () => ({
+  lang: "en", isSample: false,
+  personal: { name: "", title: "", email: "", phone: "", location: "", linkedin: "", website: "" },
+  summary: "", experience: [newExp()], education: [newEdu()],
+  skills: "", certifications: "", languages: "", projects: [], jd: ""
+});
+const sampleResume = () => ({
+  lang: "en", isSample: true,
+  personal: { name: "Omar Al-Saleh", title: "Data Analyst", email: "omar.alsaleh@example.com", phone: "+966 50 123 4567", location: "Riyadh, Saudi Arabia", linkedin: "linkedin.com/in/omar-alsaleh-example", website: "" },
+  summary: "Data analyst with 5 years of experience turning sales and operations data into decisions for retail and logistics teams. Builds SQL pipelines, Power BI dashboards and forecasting models used by 200+ managers. Known for cutting reporting time and explaining analysis in clear terms to non-technical stakeholders.",
+  experience: [
+    { id: uid(), title: "Senior Data Analyst", company: "Sahara Logistics Co.", location: "Riyadh", start: "2022-03", end: "", current: true,
+      bullets: "Built 14 Power BI dashboards tracking delivery SLAs across 9 warehouses, used weekly by 120 operations managers\nAutomated monthly KPI reporting with SQL and Python, cutting preparation time from 3 days to 4 hours\nDeveloped a demand forecasting model that reduced stock-outs by 18% within two quarters\nPartnered with finance to redesign the cost-per-shipment metric, now the company standard" },
+    { id: uid(), title: "Data Analyst", company: "Najd Retail Group", location: "Riyadh", start: "2019-07", end: "2022-02", current: false,
+      bullets: "Analyzed point-of-sale data for 60 stores to flag slow-moving SKUs, freeing SAR 2.1M in inventory\nDesigned A/B tests for loyalty promotions, raising repeat purchases by 11%\nMaintained the sales data warehouse and documented 40+ tables for self-service reporting" }
+  ],
+  education: [{ id: uid(), degree: "B.Sc. in Statistics", school: "King Saud University", location: "Riyadh", start: "2015-09", end: "2019-06", details: "GPA 4.3 / 5.0\nGraduation project: churn prediction for telecom customers" }],
+  skills: "SQL, Python (pandas), Power BI, Tableau, Excel (Power Query), Statistical Modeling, Forecasting, A/B Testing, Data Warehousing, ETL, Stakeholder Communication",
+  certifications: "Microsoft Certified: Power BI Data Analyst Associate (PL-300), 2023\nGoogle Data Analytics Professional Certificate, 2021",
+  languages: "Arabic (Native), English (Fluent)",
+  projects: [{ id: uid(), name: "Ramadan Demand Dashboard", link: "github.com/omar-example/ramadan-demand", bullets: "Modeled seasonal demand shifts across 3 years of grocery sales data\nPublished the notebook and cleaned dataset for open reuse" }],
+  jd: ""
+});
+const SAMPLE_JD = `Data Analyst – Retail Analytics
+
+We are looking for a Data Analyst to join our analytics team in Riyadh. You will build dashboards, analyze sales and customer data, and present insights to business stakeholders.
+
+Responsibilities
+- Develop and maintain Power BI and Tableau dashboards for commercial KPIs
+- Write complex SQL queries and Python scripts to clean and model data
+- Build ETL pipelines in Snowflake and dbt
+- Design A/B testing experiments and measure campaign performance
+- Forecast demand and support inventory planning
+- Communicate findings to stakeholders and senior management
+
+Requirements
+- Bachelor's degree in Statistics, Computer Science or a related field
+- 3+ years of experience in data analysis, preferably in retail or e-commerce
+- Strong SQL, Python and data visualization skills
+- Experience with Snowflake, dbt or similar cloud data warehouse tools
+- Excellent communication skills in Arabic and English`;
+
+function load() {
+  try {
+    const raw = store.get(STORE);
+    if (!raw) return null;
+    const s = JSON.parse(raw), b = blank();
+    return Object.assign(b, s, { personal: Object.assign(b.personal, s.personal || {}) });
+  } catch (e) { return null; }
+}
+function save() { store.set(STORE, JSON.stringify(state)); }
+let state = load() || sampleResume();
+
+const getPath = p => p.split(".").reduce((o, k) => (o == null ? o : o[k]), state);
+function setPath(p, v) { const ks = p.split("."), last = ks.pop(); ks.reduce((o, k) => o[k], state)[last] = v; }
+
+/* ---------- formatting ---------- */
+const MONTHS = { en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  ar: ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"] };
+const HEAD = {
+  en: { summary: "Professional Summary", experience: "Work Experience", education: "Education", skills: "Skills", projects: "Projects", certifications: "Certifications", languages: "Languages", present: "Present", sep: ", " },
+  ar: { summary: "الملخص المهني", experience: "الخبرات العملية", education: "التعليم", skills: "المهارات", projects: "المشاريع", certifications: "الشهادات", languages: "اللغات", present: "حتى الآن", sep: "، " }
+};
+function parseYM(s) {
+  s = (s || "").trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})$/))) return { y: +m[1], m: +m[2] };
+  if ((m = s.match(/^(\d{1,2})[\/.\-](\d{4})$/))) return { y: +m[2], m: +m[1] };
+  if ((m = s.match(/^(\d{4})$/))) return { y: +m[1], m: 0 };
+  return null;
+}
+function fmtYM(s, lang) {
+  const d = parseYM(s);
+  if (!d) return (s || "").trim();
+  return d.m >= 1 && d.m <= 12 ? MONTHS[lang][d.m - 1] + " " + d.y : String(d.y);
+}
+function dateRange(start, end, current, lang) {
+  const a = fmtYM(start, lang), b = current ? HEAD[lang].present : fmtYM(end, lang);
+  return a && b ? a + " – " + b : a || b || "";
+}
+const lines = t => (t || "").split(/\n+/).map(s => s.replace(/^\s*[-•*–·▪●◦]+\s*/, "").trim()).filter(Boolean);
+const listItems = t => (t || "").split(/[,،\n]+/).map(s => s.trim()).filter(Boolean);
+const clean = s => (s || "").trim();
+const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((e || "").trim());
+
+/* One intermediate document model feeds the preview, Word, PDF and text exports. */
+function buildBlocks(s) {
+  const L = s.lang, H = HEAD[L], P = s.personal, out = [];
+  if (clean(P.name)) out.push({ t: "name", text: clean(P.name) });
+  if (clean(P.title)) out.push({ t: "title", text: clean(P.title) });
+  const contact = [P.location, P.phone, P.email, P.linkedin, P.website].map(clean).filter(Boolean).join(" | ");
+  if (contact) out.push({ t: "contact", text: contact });
+  if (clean(s.summary)) out.push({ t: "h", text: H.summary }, { t: "p", text: clean(s.summary).replace(/\s*\n\s*/g, " ") });
+  const exps = s.experience.filter(e => clean(e.title) || clean(e.company));
+  if (exps.length) {
+    out.push({ t: "h", text: H.experience });
+    exps.forEach(e => {
+      out.push({ t: "role", text: clean(e.title) || clean(e.company) });
+      const where = [clean(e.title) ? clean(e.company) : "", clean(e.location)].filter(Boolean).join(H.sep);
+      const meta = [where, dateRange(e.start, e.end, e.current, L)].filter(Boolean).join(" | ");
+      if (meta) out.push({ t: "meta", text: meta });
+      lines(e.bullets).forEach(b => out.push({ t: "li", text: b }));
+    });
+  }
+  const edus = s.education.filter(e => clean(e.degree) || clean(e.school));
+  if (edus.length) {
+    out.push({ t: "h", text: H.education });
+    edus.forEach(e => {
+      out.push({ t: "role", text: clean(e.degree) || clean(e.school) });
+      const where = [clean(e.degree) ? clean(e.school) : "", clean(e.location)].filter(Boolean).join(H.sep);
+      const meta = [where, dateRange(e.start, e.end, e.current, L)].filter(Boolean).join(" | ");
+      if (meta) out.push({ t: "meta", text: meta });
+      lines(e.details).forEach(b => out.push({ t: "li", text: b }));
+    });
+  }
+  const skills = listItems(s.skills);
+  if (skills.length) out.push({ t: "h", text: H.skills }, { t: "p", text: skills.join(H.sep) });
+  const projs = s.projects.filter(p => clean(p.name));
+  if (projs.length) {
+    out.push({ t: "h", text: H.projects });
+    projs.forEach(p => {
+      out.push({ t: "role", text: clean(p.name) + (clean(p.link) ? " | " + clean(p.link) : "") });
+      lines(p.bullets).forEach(b => out.push({ t: "li", text: b }));
+    });
+  }
+  const certs = lines(s.certifications);
+  if (certs.length) { out.push({ t: "h", text: H.certifications }); certs.forEach(c => out.push({ t: "li", text: c })); }
+  const langs = listItems(s.languages);
+  if (langs.length) out.push({ t: "h", text: H.languages }, { t: "p", text: langs.join(H.sep) });
+  return out;
+}
+function plainText(blocks, lang) {
+  const out = [];
+  blocks.forEach(b => {
+    if (b.t === "h") out.push("", lang === "en" ? b.text.toUpperCase() : b.text);
+    else if (b.t === "li") out.push("- " + b.text);
+    else if (b.t === "role" && out.length && out[out.length - 1] !== "" && !/^[A-Z؀-ۿ ]+$/.test(out[out.length - 1])) out.push("", b.text);
+    else out.push(b.text);
+  });
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
+}
+
+/* ---------- keyword analysis ---------- */
+const normAr = s => s.replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
+const TOKRE = /[a-z0-9ء-ي](?:[a-z0-9ء-ي+#.\-]*[a-z0-9ء-ي+#])?/g;
+function stem(w) {
+  if (/^[ء-ي]/.test(w)) {
+    if (w.startsWith("وال") && w.length > 5) return w.slice(3);
+    if ((w.startsWith("بال") || w.startsWith("كال") || w.startsWith("فال")) && w.length > 5) return w.slice(3);
+    if (w.startsWith("لل") && w.length > 4) return w.slice(2);
+    if (w.startsWith("ال") && w.length > 4) return w.slice(2);
+  }
+  return w;
+}
+const toks = text => {
+  const raw = text.toLowerCase().replace(/[ً-ْـ]/g, "").match(TOKRE) || [];
+  return { raw, norm: raw.map(w => stem(normAr(w))) };
+};
+const STOP = new Set((`a an the and or of to in on for with by at from as is are be been being this that these those it its we you your our their they them will would can could should must may might have has had do does did not no nor but if than then so such into onto over under about across per via within without who whom which what when where why how all any each every more most other some own same very also etc e.g i.e plus
+job role position positions candidate candidates team teams work working worked experience experiences year years month months strong ability able skill skills knowledge including include includes preferred preferably required require requirements requirement responsibilities responsibility responsible minimum least related relevant excellent good great new using use used based degree field fields company companies opportunity opportunities looking join environment well both us our ideal successful key level high highly closely across day daily week weekly business new solid proven demonstrated hands-on understanding familiarity similar tools tool areas area like take make help ensure provide support build develop maintain write create design perform work deliver manage lead own drive analyze present communicate measure collaborate partner across part apply apply now benefits salary competitive office remote hybrid full-time part-time location based fast-paced dynamic
+في من على الى عن مع او و ثم كما التي الذي الذين اللتي هذا هذه ذلك تلك هناك هنا كل بعض اي ان كان يكون تكون لدى لديه لديها لديك لدينا عند عبر حول بين ضمن خلال بما مثل غير قد لا ما هو هي هم نحن انت سنه سنوات خبره خبرات القدره قدره مهارات مهاره عمل فريق مرشح المرشح وظيفه الوظيفه يفضل مطلوب متطلبات المتطلبات مسؤوليات المسؤوليات ممتاز ممتازه جيد جيده قويه قوي العمل المهام مهام اعمال مجال شركه الشركه نبحث ننضم انضم يجب ان يتمتع القدره على`).split(/\s+/).map(w => stem(normAr(w))));
+const SHORT_OK = new Set(["ai","ml","ui","ux","qa","hr","ci","go","c#","r&d","pm","3d","5g"]);
+const isStop = t => STOP.has(t) || /^[\d.,\-+#%]+$/.test(t) || t.length < 2 || (t.length === 2 && !SHORT_OK.has(t)) || (/^[ء-ي]/.test(t) && t.length < 3);
+const PHRASES = ["power bi","power query","machine learning","deep learning","data analysis","data analytics","data science","data modeling","data visualization","data warehouse","data warehousing","data engineering","business intelligence","a/b testing","project management","product management","program management","stakeholder management","account management","customer service","customer experience","supply chain","financial modeling","financial analysis","google analytics","digital marketing","content marketing","social media","user experience","user research","ci/cd","computer science","cloud computing","microsoft excel","sql server","problem solving","time management","cross-functional","natural language processing","computer vision","quality assurance","risk management","change management","sales operations","inventory management",
+  "تحليل البيانات","ذكاء الأعمال","إدارة المشاريع","إدارة المنتجات","خدمة العملاء","تجربة العملاء","سلاسل الإمداد","سلسلة الإمداد","التسويق الرقمي","وسائل التواصل الاجتماعي","تعلم الآلة","الذكاء الاصطناعي","علوم البيانات","إدارة المخاطر","الموارد البشرية","التحليل المالي","إدارة المخزون","حل المشكلات","العمل الجماعي"
+].map(p => ({ k: normAr(p.toLowerCase()), label: p }));
+
+function extractKeywords(jd) {
+  if (!jd.trim()) return [];
+  const norm = normAr(jd.toLowerCase()), out = [], used = new Set();
+  PHRASES.forEach(ph => {
+    if (!norm.includes(ph.k) || out.some(o => o.k.includes(ph.k))) return;
+    const m = /^[\x00-\x7f]+$/.test(ph.label) ? jd.match(new RegExp(escRe(ph.label), "i")) : null;
+    out.push({ k: ph.k, label: m ? m[0] : ph.label, type: "ph" });
+    ph.k.split(/\s+/).forEach(w => used.add(stem(w)));
+  });
+  const { raw, norm: tk } = toks(jd), surf = new Map(), uni = new Map(), bi = new Map();
+  tk.forEach((t, i) => { if (!surf.has(t)) surf.set(t, raw[i]); });
+  tk.forEach((t, i) => {
+    if (isStop(t)) return;
+    const u = uni.get(t) || { c: 0, i }; u.c++; uni.set(t, u);
+    const n = tk[i + 1];
+    if (n && !isStop(n)) { const k = t + " " + n, b = bi.get(k) || { c: 0, i }; b.c++; bi.set(k, b); }
+  });
+  [...bi.entries()].filter(([, v]) => v.c >= 2).sort((a, b) => b[1].c - a[1].c || a[1].i - b[1].i).slice(0, 8).forEach(([k]) => {
+    const [a, b] = k.split(" ");
+    if (used.has(a) || used.has(b)) return;
+    out.push({ k, label: surf.get(a) + " " + surf.get(b), type: "bi" }); used.add(a); used.add(b);
+  });
+  [...uni.entries()].filter(([k]) => !used.has(k)).sort((a, b) => b[1].c - a[1].c || a[1].i - b[1].i)
+    .forEach(([k]) => { if (out.length < 30) out.push({ k, label: surf.get(k), type: "uni" }); });
+  return out;
+}
+function matchKeywords(kws, text) {
+  const { norm: tk } = toks(text), set = new Set(tk), seq = " " + tk.join(" ") + " ", flat = normAr(text.toLowerCase());
+  const has = k => set.has(k) || set.has(k + "s") || set.has(k + "es") || (k.endsWith("s") && set.has(k.slice(0, -1)));
+  return kws.map(k => ({ ...k, hit: k.type === "ph" ? flat.includes(k.k) : k.type === "bi" ? seq.includes(" " + k.k + " ") : has(k.k) }));
+}
+
+/* ---------- ATS checks ---------- */
+const EN_VERBS = new Set(`led lead managed manage developed develop built build designed design created create implemented implement improved improve increased increase reduced reduce launched launch delivered deliver analyzed analyse automate automated streamlined optimized optimize coordinated drove drive established generated negotiated organized oversaw planned produced redesigned resolved saved spearheaded supervised trained mentored achieved accelerated architected collaborated conducted cut defined deployed directed engineered executed expanded facilitated forecasted grew identified initiated integrated introduced maintained migrated modeled monitored owned partnered prepared presented prioritized programmed published recruited restructured scaled secured simplified standardized tested transformed wrote ran handled won boosted consolidated converted earned eliminated enhanced evaluated founded headed lowered pioneered raised revamped shipped sourced audited authored budgeted coached cultivated documented drafted guided hired inspected investigated modernized operate operated piloted proposed rebuilt refined reorganized researched reviewed shaped solved trimmed upgraded validated`.split(/\s+/));
+const AR_VERBS = new Set(["قدت","قاد","ادرت","اداره","طورت","تطوير","صممت","تصميم","بنيت","بناء","نفذت","تنفيذ","حسنت","تحسين","رفعت","رفع","خفضت","خفض","قللت","تقليل","اطلقت","اطلاق","حللت","تحليل","انشات","انشاء","قمت","اشرفت","الاشراف","اشراف","نسقت","تنسيق","دربت","تدريب","وضعت","ابتكرت","اعددت","اعداد","انجزت","تابعت","متابعه","ساهمت","شاركت","قدمت","تقديم","اسست","تاسيس","زدت","زياده","وفرت","توفير","اتمتت","اتمته","حققت","تحقيق","توليت","قياده","اعدت","راجعت","مراجعه","اكتشفت","نظمت","تنظيم","ترأست","ترأس","فاوضت","اجريت","اجراء","وثقت","توثيق","دمجت","نقلت","عالجت","بادرت"].map(normAr));
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{1F000}-\u{1F2FF}]/u;
+const EMOJI_G = new RegExp(EMOJI_RE.source, "gu");
+const wordCount = t => (t.trim().match(/\S+/g) || []).length;
+const firstWordVerb = (b, lang) => {
+  let w = (b.trim().split(/\s+/)[0] || "").toLowerCase().replace(/[^a-zء-ي]/g, "");
+  if (lang === "ar" || /^[ء-ي]/.test(w)) { w = normAr(w); if (w.startsWith("و") && w.length > 3 && !AR_VERBS.has(w)) w = w.slice(1); return AR_VERBS.has(w); }
+  return EN_VERBS.has(w) || (/ed$/.test(w) && w.length > 4);
+};
+const ymNum = s => { const d = parseYM(s); return d ? d.y * 12 + (d.m || 1) : null; };
+
+function runChecks(s, match) {
+  const L = s.lang, P = s.personal, C = [];
+  const add = (label, status, detail, w) => C.push({ label, status, detail, w });
+  const blocks = buildBlocks(s), text = plainText(blocks, L);
+  const eOk = emailOk(P.email);
+  const miss = [!clean(P.name) && "الاسم", !eOk && "بريد إلكتروني صحيح", !clean(P.phone) && "رقم الجوال", !clean(P.location) && "المدينة"].filter(Boolean);
+  add("بيانات التواصل", !clean(P.name) || !eOk ? "fail" : miss.length ? "warn" : "pass",
+    miss.length ? "ناقص: " + miss.join("، ") + "." : "الاسم والبريد والجوال والمدينة في متن الصفحة.", 12);
+  add("المسمى الوظيفي المستهدف", clean(P.title) ? "pass" : "warn",
+    clean(P.title) ? "يظهر تحت الاسم، وهو أول ما تطابقه الأنظمة مع الإعلان." : "أضف المسمى كما يكتبه الإعلان، مثل Data Analyst.", 5);
+  const sw = wordCount(s.summary || "");
+  add("الملخص المهني", sw === 0 ? "fail" : sw < 25 || sw > 90 ? "warn" : "pass",
+    sw === 0 ? "لا يوجد ملخص. 3 جمل تذكر المسمى وسنوات الخبرة وأهم المهارات." : `${sw} كلمة. ${sw < 25 ? "قصير؛ المثالي بين 30 و80 كلمة." : sw > 90 ? "طويل؛ اختصره إلى 80 كلمة أو أقل." : "طول مناسب."}`, 8);
+  const exps = s.experience.filter(e => clean(e.title) || clean(e.company));
+  const incomplete = exps.filter(e => !clean(e.title) || !clean(e.company) || !clean(e.start) || (!e.current && !clean(e.end)));
+  add("الخبرات العملية", !exps.length ? "fail" : incomplete.length ? "warn" : "pass",
+    !exps.length ? "أضف خبرة واحدة على الأقل (أو تدريباً أو عملاً تطوعياً)." : incomplete.length ? `${incomplete.length} من ${exps.length} بدون مسمى أو جهة أو تاريخ بداية ونهاية.` : `${exps.length} خبرة، كلها بمسمى وجهة وتواريخ.`, 14);
+  const ord = exps.map(e => e.current ? 1e9 : ymNum(e.start)).filter(v => v != null);
+  const sorted = ord.every((v, i) => i === 0 || ord[i - 1] >= v);
+  if (exps.length > 1) add("الترتيب الزمني", sorted ? "pass" : "warn", sorted ? "من الأحدث إلى الأقدم." : "رتّب الخبرات من الأحدث إلى الأقدم بأسهم الترتيب.", 4);
+  const bullets = exps.flatMap(e => lines(e.bullets));
+  const thin = exps.filter(e => lines(e.bullets).length < 2).length;
+  add("نقاط الإنجاز", !bullets.length ? "fail" : thin ? "warn" : "pass",
+    !bullets.length ? "اكتب 3 إلى 5 نقاط لكل وظيفة، نقطة في كل سطر." : thin ? `${thin} خبرة فيها أقل من نقطتين.` : `${bullets.length} نقطة موزعة على الخبرات.`, 10);
+  if (bullets.length) {
+    const q = bullets.filter(b => /\d/.test(b)).length / bullets.length;
+    add("نتائج بالأرقام", q >= 0.4 ? "pass" : q >= 0.15 ? "warn" : "fail",
+      `${Math.round(q * 100)}% من النقاط فيها رقم. ${q >= 0.4 ? "ممتاز." : "أضف نسباً أو مبالغ أو أعداداً تقيس أثرك."}`, 10);
+    const v = bullets.filter(b => firstWordVerb(b, L)).length / bullets.length;
+    add("تبدأ بأفعال إنجاز", v >= 0.6 ? "pass" : v >= 0.3 ? "warn" : "fail",
+      `${Math.round(v * 100)}% من النقاط تبدأ بفعل. ${L === "en" ? "ابدأ بأفعال مثل Led أو Built أو Reduced." : "ابدأ بأفعال مثل: طورت، قدت، خفضت."}`, 8);
+    const fp = bullets.filter(b => L === "en" ? /\b(i|my|me|i'm|i've|we)\b/i.test(b) : /(^|\s)(انا|أنا|نحن)(\s|$)/.test(b)).length;
+    add("بدون ضمير المتكلم", fp ? "warn" : "pass", fp ? `${fp} نقطة فيها ${L === "en" ? "I / my" : "أنا"}؛ احذفها وابدأ بالفعل مباشرة.` : "الصياغة مباشرة ومهنية.", 4);
+  }
+  const sk = listItems(s.skills).length;
+  add("المهارات", sk >= 8 ? "pass" : sk >= 4 ? "warn" : "fail", `${sk} مهارة. ${sk < 8 ? "أضف 8 إلى 15 مهارة تقنية بنفس صياغة الإعلان." : "عدد جيد."}`, 10);
+  const edu = s.education.filter(e => clean(e.degree) && clean(e.school)).length;
+  add("التعليم", edu ? "pass" : "warn", edu ? "الدرجة والجهة موجودتان." : "أضف الدرجة العلمية واسم الجامعة.", 6);
+  const wc = wordCount(text);
+  add("طول السيرة", wc >= 250 && wc <= 900 ? "pass" : (wc >= 150 && wc < 250) || (wc > 900 && wc <= 1200) ? "warn" : "fail",
+    `${wc} كلمة، حوالي ${Math.max(1, Math.ceil(wc / 480))} صفحة. ${wc < 250 ? "قصيرة؛ أضف تفاصيل الإنجازات." : wc > 900 ? "طويلة؛ صفحة أو صفحتان تكفي." : "طول مناسب."}`, 6);
+  const holes = (text.match(/\[(?:X%?|N)\]/gi) || []).length;
+  if (holes) add("أرقام لم تُكتب بعد", "fail", `${holes} موضع فيه [X%] أو [N]. استبدلها بأرقامك الحقيقية، أو احذفها إن لم تعرف الرقم.`, 8);
+  const emo = EMOJI_RE.test(text);
+  add("رموز وإيموجي", emo ? "warn" : "pass", emo ? "احذف الإيموجي والرموز مثل ★ و ✓؛ بعض الأنظمة تحولها إلى رموز غير مقروءة." : "لا توجد رموز قد تربك القراءة.", 3);
+  if (match.length) {
+    const cov = match.filter(m => m.hit).length / match.length;
+    add("مطابقة الوصف الوظيفي", cov >= 0.6 ? "pass" : cov >= 0.35 ? "warn" : "fail",
+      `${Math.round(cov * 100)}% من كلمات الإعلان موجودة في سيرتك. ${cov < 0.6 ? "أضف الكلمات الناقصة التي تنطبق عليك فعلاً." : ""}`, 14);
+  } else add("مطابقة الوصف الوظيفي", "info", "الصق إعلان الوظيفة في تبويب «مطابقة الوظيفة» لقياس الكلمات المفتاحية.", 0);
+  if (L === "ar") add("لغة السيرة", "info", "كثير من أنظمة ATS في الشركات العالمية تقرأ الإنجليزية أفضل. جهّز نسخة إنجليزية إن كان الإعلان بالإنجليزية.", 0);
+  const scored = C.filter(c => c.status !== "info"), tw = scored.reduce((a, c) => a + c.w, 0);
+  const got = scored.reduce((a, c) => a + c.w * (c.status === "pass" ? 1 : c.status === "warn" ? 0.5 : 0), 0);
+  return { checks: C, score: tw ? Math.round(got / tw * 100) : 0, words: wc };
+}
+
+/* ---------- settings + Gemini ---------- */
+const SET_KEY = "ats-settings-v1";
+let settings = (() => { const d = { apiKey: "", model: "" }; try { return Object.assign(d, JSON.parse(store.get(SET_KEY) || "{}")); } catch (e) { return d; } })();
+function saveSettings() { store.set(SET_KEY, JSON.stringify(settings)); }
+
+async function geminiCall(model, body, apiKey) {
+  let r;
+  try {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, body: JSON.stringify(body)
+    });
+  } catch (e) { throw { code: "network" }; }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err = (data && data.error) || {}, msg = err.message || "";
+    const retryInfo = (err.details || []).find(d => /RetryInfo/.test((d && d["@type"]) || ""));
+    const retry = retryInfo ? parseInt(retryInfo.retryDelay, 10) || 0 : 0;
+    let code = r.status === 404 ? "bad_model"
+      : (r.status === 400 && /api key/i.test(msg)) || r.status === 401 || (r.status === 403 && /api key/i.test(msg)) ? "bad_key"
+      : r.status === 403 ? "bad_model" : "upstream";
+    // 429 with "limit: 0" means no free quota at all; a wait of more than ten minutes means the daily quota is used up.
+    if (r.status === 429) code = /limit:\s*0\b/.test(msg) ? "quota_zero" : /per ?day/i.test(msg) || retry > 600 ? "daily_limit" : "rate_limited";
+    throw { code, message: msg, retry };
+  }
+  return data;
+}
+/* Ask Gemini. search:true lets it use Google Search (JSON mode is not allowed with search, so text is parsed). */
+async function gemini(prompt, { json = false, search = false, temperature = 0.6 } = {}) {
+  const key = (settings.apiKey || "").trim();
+  if (!key) throw { code: "no_key" };
+  const body = { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature } };
+  if (json && !search) body.generationConfig.responseMimeType = "application/json";
+  if (search) body.tools = [{ google_search: {} }];
+  // Free quotas are counted per model, so when one model is out of quota or unavailable, the next one usually still answers.
+  const models = [...new Set([(settings.model || "").trim() || CONFIG.DEFAULT_MODEL, ...CONFIG.FALLBACK_MODELS])];
+  let data, lastErr = null;
+  for (const m of models) {
+    try { data = await geminiCall(m, body, key); lastErr = null; break; }
+    catch (e) {
+      lastErr = e;
+      if (!["bad_model", "quota_zero", "daily_limit", "rate_limited"].includes(e.code)) throw e;
+    }
+  }
+  if (lastErr) throw lastErr;
+  const cand = data.candidates && data.candidates[0];
+  const text = ((cand && cand.content && cand.content.parts) || []).map(p => p.text || "").join("");
+  if (!text.trim()) throw { code: data.promptFeedback && data.promptFeedback.blockReason ? "refused" : "empty" };
+  const sources = ((cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || []).map(c => c.web).filter(Boolean);
+  return { text, sources };
+}
+function parseJSON(text) {
+  try { return JSON.parse(text); } catch (e) {}
+  const f = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (f) { try { return JSON.parse(f[1]); } catch (e) {} }
+  const starts = ["{", "["].map(c => text.indexOf(c)).filter(i => i >= 0);
+  const s = starts.length ? Math.min(...starts) : -1, e = Math.max(text.lastIndexOf("}"), text.lastIndexOf("]"));
+  if (s >= 0 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch (err) {} }
+  throw { code: "invalid_json" };
+}
+async function geminiJSON(prompt, opts = {}) { const r = await gemini(prompt, { ...opts, json: true }); return { data: parseJSON(r.text), sources: r.sources }; }
+function aiError(e) {
+  const c = e && e.code;
+  if (c === "no_key") { toast("أضف مفتاح Gemini المجاني من الإعدادات أولاً"); setSection("settings"); $("#setKey").focus(); }
+  else if (c === "bad_key") toast("مفتاح Gemini غير صحيح؛ راجعه في الإعدادات");
+  else if (c === "rate_limited") toast(`طلبات كثيرة خلال دقيقة؛ حاول بعد ${Math.min(e.retry || 60, 120)} ثانية`);
+  else if (c === "daily_limit") toast(`انتهت حصة Gemini المجانية لليوم${e.retry ? `، وتتجدد بعد حوالي ${Math.ceil(e.retry / 3600)} ساعة` : ""}. باقي أقسام الموقع تعمل بدون ذكاء اصطناعي.`);
+  else if (c === "quota_zero") toast("هذه الخدمة غير متاحة في الخطة المجانية لمفتاحك؛ امسح خانة النموذج في الإعدادات وحاول");
+  else if (c === "bad_model") toast("النموذج غير متاح؛ امسح خانة النموذج في الإعدادات");
+  else if (c === "invalid_json") toast("الرد لم يصل بالصيغة المتوقعة؛ حاول مرة أخرى");
+  else if (c === "refused") toast("رفض النموذج هذا الطلب؛ عدّل النص وحاول");
+  else if (c === "network") toast("تعذر الاتصال؛ تحقق من الإنترنت");
+  else toast("حدث خطأ من Gemini؛ حاول مرة أخرى");
+}
+async function askJson(prompt, btn, opts) {
+  const label = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "جارٍ الكتابة…"; }
+  try { return (await geminiJSON(prompt, opts)).data; } catch (e) { aiError(e); return null; }
+  finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
+}
+
+/* ---------- UI state ---------- */
+const FORM_TABS = [["info","البيانات"],["summary","الملخص"],["experience","الخبرات"],["education","التعليم"],["skills","المهارات"],["extra","إضافي"]];
+let formTab = "info", highlight = true, lastMatch = [], aiSuggest = {};
+const toastEl = $("#toast"); let toastT;
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 3600); }
+const cdir = () => state.lang === "ar" ? "rtl" : "ltr";
+const ph = (en, ar) => state.lang === "ar" ? ar : en;
+
+function fld(o) {
+  const v = getPath(o.path) ?? "", id = "f-" + o.path.replace(/\./g, "-");
+  const attrs = `id="${id}" data-path="${o.path}" dir="${o.dir || cdir()}"${o.ph ? ` placeholder="${esc(o.ph)}"` : ""}${o.ac ? ` autocomplete="${o.ac}"` : ""}${o.disabled ? " disabled" : ""}`;
+  const ctl = o.rows ? `<textarea ${attrs} rows="${o.rows}">${esc(v)}</textarea>` : `<input type="${o.type || "text"}" ${attrs} value="${esc(v)}">`;
+  return `<label class="fld${o.wide ? " wide" : ""}" for="${id}"><span class="lbl">${o.label}${o.hint ? `<em>${o.hint}</em>` : ""}</span>${ctl}</label>`;
+}
+function itemHead(kind, i, n, title) {
+  return `<div class="card-head"><strong>${esc(title)}</strong>
+    <button type="button" class="icon-btn" data-act="up" data-kind="${kind}" data-i="${i}" aria-label="تحريك للأعلى" ${i === 0 ? "disabled" : ""}>↑</button>
+    <button type="button" class="icon-btn" data-act="down" data-kind="${kind}" data-i="${i}" aria-label="تحريك للأسفل" ${i === n - 1 ? "disabled" : ""}>↓</button>
+    <button type="button" class="icon-btn" data-act="del" data-kind="${kind}" data-i="${i}" aria-label="حذف">×</button></div>`;
+}
+function suggestBox(key, items, isList) {
+  const d = state.lang === "ar" ? "" : " ltr";
+  return `<div class="ai-box"><strong>اقتراح الذكاء الاصطناعي · راجعه قبل الاعتماد</strong>
+    ${isList ? `<ul class="${d}">${items.map(b => `<li>${esc(b)}</li>`).join("")}</ul>` : `<p class="${d}" style="margin:0">${esc(items)}</p>`}
+    <div class="row"><button type="button" class="btn small primary" data-act="ai-accept" data-key="${key}">اعتماد النص</button>
+    <button type="button" class="btn small" data-act="ai-dismiss" data-key="${key}">تجاهل</button></div></div>`;
+}
+function expSuggestBox(key, s) {
+  const d = state.lang === "ar" ? "" : " ltr";
+  return `<div class="ai-box"><strong>اقتراح الذكاء الاصطناعي · راجعه قبل الاعتماد</strong>
+    <ul class="${d}">${s.bullets.map(b => `<li>${esc(b)}</li>`).join("")}</ul>
+    ${s.skills.length ? `<div><span class="lbl">المهارات المكتسبة · تُضاف إلى قسم المهارات</span>
+      <div class="chips${d}" style="margin-top:6px">${s.skills.map(k => `<span class="chip">${esc(k)}</span>`).join("")}</div></div>` : ""}
+    <div class="row"><button type="button" class="btn small primary" data-act="ai-accept" data-key="${key}">اعتماد الإنجازات${s.skills.length ? " وإضافة المهارات" : ""}</button>
+    <button type="button" class="btn small" data-act="ai-dismiss" data-key="${key}">تجاهل</button></div></div>`;
+}
+function renderFormTabs() {
+  $("#formTabs").innerHTML = FORM_TABS.map(([k, l]) => {
+    const n = k === "experience" ? state.experience.length : k === "education" ? state.education.length : 0;
+    return `<button type="button" role="tab" data-ftab="${k}" aria-selected="${k === formTab}">${l}${n ? `<span class="count">${n}</span>` : ""}</button>`;
+  }).join("");
+}
+function renderForm() {
+  renderFormTabs();
+  const b = $("#formBody"); let h = "";
+  if (formTab === "info") {
+    h = `<div class="grid2">
+      ${fld({ path: "personal.name", label: "الاسم الكامل", ph: ph("Omar Al-Saleh", "عمر الصالح"), ac: "name" })}
+      ${fld({ path: "personal.title", label: "المسمى الوظيفي المستهدف", ph: ph("Data Analyst", "محلل بيانات") })}
+      ${fld({ path: "personal.email", label: "البريد الإلكتروني", type: "email", dir: "ltr", ph: "name@email.com", ac: "email" })}
+      ${fld({ path: "personal.phone", label: "رقم الجوال", type: "tel", dir: "ltr", ph: "+966 5X XXX XXXX", ac: "tel" })}
+      ${fld({ path: "personal.location", label: "المدينة والدولة", ph: ph("Riyadh, Saudi Arabia", "الرياض، السعودية") })}
+      ${fld({ path: "personal.linkedin", label: "LinkedIn", hint: "اختياري", dir: "ltr", ph: "linkedin.com/in/your-name" })}
+      ${fld({ path: "personal.website", label: "موقع أو معرض أعمال", hint: "اختياري", dir: "ltr", ph: "github.com/your-name", wide: true })}
+    </div>
+    <p class="tip">اكتب المسمى الوظيفي <b>بنفس صياغة الإعلان</b>. تضع الأداة بيانات التواصل في متن الصفحة وليس في رأسها، لأن بعض أنظمة ATS تتجاهل رأس وتذييل الصفحة.</p>`;
+  } else if (formTab === "summary") {
+    h = `${fld({ path: "summary", label: "الملخص المهني", rows: 6, wide: true, ph: ph("Data analyst with 5 years of experience…", "محلل بيانات بخبرة 5 سنوات في…") })}
+    <div class="row"><span class="counter" id="sumCount"></span><span class="sp"></span>
+      <button type="button" class="btn small ai" data-act="ai-summary">اكتب الملخص بالذكاء الاصطناعي</button></div>
+    ${aiSuggest.summary ? suggestBox("summary", aiSuggest.summary, false) : ""}
+    <p class="tip">3 جمل: <b>من أنت</b> (المسمى وسنوات الخبرة)، <b>ماذا تتقن</b> (أهم 3–4 مهارات من الإعلان)، و<b>أبرز نتيجة</b> حققتها. بدون «أنا» وبدون عبارات عامة مثل «شخص مجتهد».</p>`;
+  } else if (formTab === "experience") {
+    h = state.experience.map((e, i) => `<div class="card">
+      ${itemHead("experience", i, state.experience.length, clean(e.title) || clean(e.company) || "خبرة " + (i + 1))}
+      <div class="grid2">
+        ${fld({ path: `experience.${i}.title`, label: "المسمى الوظيفي", ph: ph("Senior Data Analyst", "محلل بيانات أول") })}
+        ${fld({ path: `experience.${i}.company`, label: "الجهة", ph: ph("Company name", "اسم الشركة") })}
+        ${fld({ path: `experience.${i}.location`, label: "المدينة", ph: ph("Riyadh", "الرياض") })}
+        <div class="grid2" style="gap:10px">
+          ${fld({ path: `experience.${i}.start`, label: "من", type: "month", dir: "ltr", ph: "2022-03" })}
+          <div class="fld">${fld({ path: `experience.${i}.end`, label: "إلى", type: "month", dir: "ltr", ph: "2024-06", disabled: e.current })}
+            <label class="chk"><input type="checkbox" id="f-experience-${i}-current" data-path="experience.${i}.current" ${e.current ? "checked" : ""}> حتى الآن</label></div>
+        </div>
+        ${fld({ path: `experience.${i}.bullets`, label: "الإنجازات", hint: "نقطة في كل سطر", rows: 5, wide: true, ph: ph("Built 14 dashboards used by 120 managers\nCut reporting time from 3 days to 4 hours", "طورت 14 لوحة بيانات يستخدمها 120 مديراً\nخفضت وقت إعداد التقارير من 3 أيام إلى 4 ساعات") })}
+      </div>
+      <div class="row"><span class="sp"></span><button type="button" class="btn small ai" data-act="ai-bullets" data-i="${i}">${lines(e.bullets).length ? "حسّن الإنجازات بالذكاء الاصطناعي" : "اكتب الإنجازات بالذكاء الاصطناعي"}</button></div>
+      ${aiSuggest[e.id] ? expSuggestBox(e.id, aiSuggest[e.id]) : ""}
+    </div>`).join("") + `<button type="button" class="btn" data-act="add" data-kind="experience">+ إضافة خبرة</button>
+    <p class="tip">صيغة كل نقطة: <b>فعل + ماذا فعلت + النتيجة بالأرقام</b>. مثال: «خفضت تكلفة الشحن 12% بإعادة تصميم المسارات». رتّب الخبرات من الأحدث للأقدم. ليس عندك خبرة؟ أضف التدريب أو العمل التطوعي أو مشروع التخرج هنا.<br>
+    <b>مع الذكاء الاصطناعي:</b> اكتب المسمى والجهة، وإن أردت اكتب في خانة الإنجازات ملاحظات سريعة عما كنت تسويه، ثم اضغط «اكتب الإنجازات». يكتب الإنجازات بدون أرقام، ويستخرج المهارات المكتسبة ويضيفها لقسم المهارات. وإذا عندك أرقام حقيقية اكتبها في ملاحظاتك فيستخدمها.</p>`;
+  } else if (formTab === "education") {
+    h = state.education.map((e, i) => `<div class="card">
+      ${itemHead("education", i, state.education.length, clean(e.degree) || clean(e.school) || "مؤهل " + (i + 1))}
+      <div class="grid2">
+        ${fld({ path: `education.${i}.degree`, label: "الدرجة والتخصص", ph: ph("B.Sc. in Statistics", "بكالوريوس إحصاء") })}
+        ${fld({ path: `education.${i}.school`, label: "الجامعة أو المعهد", ph: ph("King Saud University", "جامعة الملك سعود") })}
+        ${fld({ path: `education.${i}.location`, label: "المدينة", ph: ph("Riyadh", "الرياض") })}
+        <div class="grid2" style="gap:10px">
+          ${fld({ path: `education.${i}.start`, label: "من", type: "month", dir: "ltr", ph: "2015-09" })}
+          <div class="fld">${fld({ path: `education.${i}.end`, label: "إلى", type: "month", dir: "ltr", ph: "2019-06", disabled: e.current })}
+            <label class="chk"><input type="checkbox" id="f-education-${i}-current" data-path="education.${i}.current" ${e.current ? "checked" : ""}> حتى الآن</label></div>
+        </div>
+        ${fld({ path: `education.${i}.details`, label: "تفاصيل", hint: "اختياري، سطر لكل تفصيلة", rows: 3, wide: true, ph: ph("GPA 4.3 / 5.0\nGraduation project: …", "المعدل 4.3 من 5\nمشروع التخرج: …") })}
+      </div></div>`).join("") + `<button type="button" class="btn" data-act="add" data-kind="education">+ إضافة مؤهل</button>`;
+  } else if (formTab === "skills") {
+    h = `${fld({ path: "skills", label: "المهارات", hint: "افصل بينها بفاصلة", rows: 4, wide: true, ph: ph("SQL, Python, Power BI, Tableau", "SQL، Python، Power BI، إدارة المشاريع") })}
+    <div class="skill-chips" id="skillChips"></div>
+    <p class="tip">انسخ أسماء المهارات <b>بنفس كتابة الإعلان</b> (Power BI وليس PowerBI). اذكر الاسم الكامل والمختصر مرة واحدة على الأقل، مثل Search Engine Optimization (SEO). يمكنك إضافة الكلمات الناقصة بضغطة من تبويب «مطابقة الوظيفة».</p>`;
+  } else {
+    h = `<h3 class="sec-title">المشاريع</h3>` + state.projects.map((p, i) => `<div class="card">
+      ${itemHead("projects", i, state.projects.length, clean(p.name) || "مشروع " + (i + 1))}
+      <div class="grid2">
+        ${fld({ path: `projects.${i}.name`, label: "اسم المشروع", ph: ph("Ramadan Demand Dashboard", "لوحة الطلب الموسمي") })}
+        ${fld({ path: `projects.${i}.link`, label: "رابط", hint: "اختياري", dir: "ltr", ph: "github.com/…" })}
+        ${fld({ path: `projects.${i}.bullets`, label: "الوصف", hint: "نقطة في كل سطر", rows: 3, wide: true })}
+      </div></div>`).join("") + `<button type="button" class="btn" data-act="add" data-kind="projects">+ إضافة مشروع</button>
+    <div class="grid2">
+      ${fld({ path: "certifications", label: "الشهادات المهنية", hint: "سطر لكل شهادة", rows: 3, wide: true, ph: ph("PMP – Project Management Institute, 2023", "PMP – معهد إدارة المشاريع، 2023") })}
+      ${fld({ path: "languages", label: "اللغات", hint: "افصل بفاصلة", wide: true, ph: ph("Arabic (Native), English (Fluent)", "العربية (اللغة الأم)، الإنجليزية (بطلاقة)") })}
+    </div>`;
+  }
+  b.innerHTML = h;
+  updateSummaryCount(); updateSkillChips();
+}
+function updateSummaryCount() { const el = $("#sumCount"); if (el) el.textContent = wordCount(state.summary || "") + " كلمة · المثالي 30–80"; }
+function updateSkillChips() { const el = $("#skillChips"); if (el) el.innerHTML = listItems(state.skills).map(s => `<span dir="auto">${esc(s)}</span>`).join(""); }
+
+/* ---------- results ---------- */
+function hlRegex() {
+  if (!highlight) return null;
+  const terms = lastMatch.filter(m => m.hit).map(m => m.label).filter(t => t && t.length > 1).sort((a, b) => b.length - a.length);
+  if (!terms.length) return null;
+  const parts = terms.map(t => /^[\x00-\x7f]+$/.test(t) ? `(?<![\\p{L}\\p{N}])${escRe(esc(t))}(?:e?s)?(?![\\p{L}\\p{N}])` : escRe(esc(t)));
+  try { return new RegExp(parts.join("|"), "giu"); } catch (e) { return null; }
+}
+function renderPreview(blocks) {
+  const re = hlRegex(), f = t => { const h = esc(t); return re ? h.replace(re, m => `<mark>${m}</mark>`) : h; };
+  let html = "", inList = false;
+  blocks.forEach(b => {
+    if (b.t === "li") { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${f(b.text)}</li>`; return; }
+    if (inList) { html += "</ul>"; inList = false; }
+    const tag = b.t === "name" ? "h2" : b.t === "h" ? "h3" : "p";
+    html += `<${tag} class="cv-${b.t}">${f(b.text)}</${tag}>`;
+  });
+  if (inList) html += "</ul>";
+  const paper = $("#paper");
+  paper.innerHTML = html || `<p class="cv-empty">ابدأ بتعبئة بياناتك وستظهر السيرة هنا.</p>`;
+  paper.dir = cdir(); paper.lang = state.lang; paper.classList.toggle("ar", state.lang === "ar");
+}
+const stColor = s => s >= 80 ? "var(--good)" : s >= 60 ? "var(--warn)" : "var(--bad)";
+const ST_LABEL = { pass: "جيد", warn: "يحتاج تحسين", fail: "ناقص", info: "ملاحظة" };
+function renderChecks(r) {
+  $("#gaugeVal").style.strokeDashoffset = (314.16 * (1 - r.score / 100)).toFixed(1);
+  $("#gauge").style.setProperty("--st", stColor(r.score));
+  $("#gaugeNum").textContent = r.score;
+  $("#scoreChipVal").textContent = r.score;
+  $("#scoreChip").style.setProperty("--st", stColor(r.score));
+  const [h, p] = r.score >= 85 ? ["جاهزة للتقديم", "السيرة تستوفي أهم قواعد ATS. راجع الملاحظات المتبقية إن وجدت."]
+    : r.score >= 70 ? ["قريبة من الجاهزية", "عالج البنود الصفراء والحمراء لترفع فرص ظهورك في نتائج الفرز."]
+    : r.score >= 50 ? ["تحتاج تحسيناً قبل التقديم", "ابدأ بالبنود الحمراء؛ هي الأكثر تأثيراً على الدرجة."]
+    : ["غير جاهزة بعد", "أكمل البيانات الأساسية والخبرات والمهارات أولاً."];
+  $("#verdictH").textContent = h; $("#verdictP").textContent = p;
+  const cnt = k => r.checks.filter(c => c.status === k).length;
+  $("#tally").innerHTML = ["pass", "warn", "fail"].filter(k => cnt(k)).map(k => `<span class="pill s-${k}">${ST_LABEL[k]} · ${cnt(k)}</span>`).join("");
+  const order = { fail: 0, warn: 1, info: 2, pass: 3 };
+  $("#checks").innerHTML = [...r.checks].sort((a, b) => order[a.status] - order[b.status])
+    .map(c => {
+      const b = c.status === "warn" && c.label === "رموز وإيموجي" ? `<button type="button" class="btn small" data-fix="clean">تنظيف تلقائي</button>` : "";
+      return `<li class="s-${c.status}"><span class="pill">${ST_LABEL[c.status]}</span><div><strong>${c.label}</strong><p>${esc(c.detail)}</p>${b}</div></li>`;
+    }).join("");
+  $("#pageEst").textContent = `${r.words} كلمة · حوالي ${Math.max(1, Math.ceil(r.words / 480))} صفحة A4`;
+}
+function renderMatch() {
+  const out = $("#matchOut");
+  if (!state.jd.trim()) { out.innerHTML = `<p class="empty">الصق إعلان الوظيفة لترى الكلمات المفتاحية الموجودة في سيرتك والناقصة منها. الكلمات الموجودة تظهر مظللة في المعاينة.</p>`; return; }
+  const hit = lastMatch.filter(m => m.hit), miss = lastMatch.filter(m => !m.hit);
+  const cov = lastMatch.length ? Math.round(hit.length / lastMatch.length * 100) : 0;
+  out.innerHTML = `<div class="cov"><b style="color:${stColor(cov)}">${cov}%</b><span>${hit.length} من ${lastMatch.length} كلمة مفتاحية من الإعلان موجودة في سيرتك</span></div>
+    <div class="meter" style="--st:${stColor(cov)}"><i style="width:${cov}%"></i></div>
+    <div><p class="kw-h">ناقصة · اضغط لإضافتها إلى المهارات (أضف فقط ما تتقنه فعلاً)</p>
+      <div class="chips">${miss.length ? miss.map(m => `<button type="button" class="chip miss" data-add="${esc(m.label)}" dir="auto">${esc(m.label)}</button>`).join("") : `<span class="empty">لا شيء ناقص.</span>`}</div></div>
+    <div><p class="kw-h">موجودة في سيرتك</p>
+      <div class="chips">${hit.length ? hit.map(m => `<span class="chip hit" dir="auto">${esc(m.label)}</span>`).join("") : `<span class="empty">لا توجد تطابقات بعد.</span>`}</div></div>`;
+}
+let rT;
+function refresh() {
+  const blocks = buildBlocks(state), text = plainText(blocks, state.lang);
+  lastMatch = matchKeywords(extractKeywords(state.jd || ""), text);
+  renderPreview(blocks);
+  renderChecks(runChecks(state, lastMatch));
+  renderMatch();
+  $("#sampleBanner").hidden = !state.isSample;
+  document.querySelectorAll("#langSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));
+  $("#dlPdf").title = state.lang === "ar" ? "ملف PDF للإنجليزية فقط؛ استخدم Word للسيرة العربية" : "";
+}
+function persist() { save(); clearTimeout(rT); rT = setTimeout(refresh, 140); }
+
+/* ---------- CV events ---------- */
+$("#formTabs").addEventListener("click", e => { const t = e.target.closest("[data-ftab]"); if (!t) return; formTab = t.dataset.ftab; renderForm(); });
+const fb = $("#formBody");
+fb.addEventListener("input", e => {
+  const el = e.target, p = el.dataset.path;
+  if (!p || el.type === "checkbox") return;
+  setPath(p, el.value);
+  if (p === "summary") updateSummaryCount();
+  if (p === "skills") updateSkillChips();
+  persist();
+});
+fb.addEventListener("change", e => {
+  const el = e.target, p = el.dataset.path;
+  if (!p || el.type !== "checkbox") return;
+  setPath(p, el.checked);
+  const end = document.getElementById(el.id.replace(/-current$/, "-end"));
+  if (end) end.disabled = el.checked;
+  persist();
+});
+fb.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, kind = b.dataset.kind, i = +b.dataset.i, arr = kind ? state[kind] : null;
+  if (act === "add") { arr.push(kind === "experience" ? newExp() : kind === "education" ? newEdu() : newProj()); }
+  else if (act === "del") { arr.splice(i, 1); if (kind !== "projects" && !arr.length) arr.push(kind === "experience" ? newExp() : newEdu()); }
+  else if (act === "up" && i > 0) { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; }
+  else if (act === "down" && i < arr.length - 1) { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; }
+  else if (act === "ai-bullets") return aiBullets(i, b);
+  else if (act === "ai-summary") return aiSummary(b);
+  else if (act === "ai-accept") {
+    const k = b.dataset.key, v = aiSuggest[k];
+    let text = v;
+    if (k === "summary") state.summary = v;
+    else {
+      const ex = state.experience.find(x => x.id === k);
+      if (ex) ex.bullets = v.bullets.join("\n");
+      const cur = listItems(state.skills);
+      v.skills.forEach(s => { if (!cur.some(c => c.toLowerCase() === s.toLowerCase())) cur.push(s); });
+      state.skills = cur.join(HEAD[state.lang].sep);
+      text = v.bullets.join(" ");
+    }
+    delete aiSuggest[k];
+    toast(/\[(?:X%?|N)\]/i.test(text) ? "تم الاعتماد؛ استبدل [X%] و[N] بأرقامك الحقيقية" : "تم الاعتماد");
+  }
+  else if (act === "ai-dismiss") { delete aiSuggest[b.dataset.key]; }
+  else return;
+  persist(); renderForm();
+});
+$("#langSeg").addEventListener("click", e => { const b = e.target.closest("[data-lang]"); if (!b) return; state.lang = b.dataset.lang; persist(); renderForm(); refresh(); });
+function setView(v) { $("#app").dataset.view = v; document.querySelectorAll("#viewSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v))); }
+$("#viewSeg").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) { setView(b.dataset.view); window.scrollTo({ top: 0 }); } });
+function setResTab(t) {
+  document.querySelectorAll("#resTabs [data-rtab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.rtab === t)));
+  ["preview", "check", "match"].forEach(k => $("#panel-" + k).hidden = k !== t);
+}
+$("#resTabs").addEventListener("click", e => { const b = e.target.closest("[data-rtab]"); if (b) setResTab(b.dataset.rtab); });
+const narrow = () => matchMedia("(max-width:999px)").matches;
+const showingCheck = () => !$("#panel-check").hidden && (!narrow() || $("#app").dataset.view === "result");
+// The score chip toggles: first press opens the ATS check, a second press goes back to the CV preview.
+$("#scoreChip").addEventListener("click", () => {
+  if (showingCheck()) setResTab("preview");
+  else { setView("result"); setResTab("check"); }
+  if (narrow()) window.scrollTo({ top: 0 });
+});
+$("#backToCv").addEventListener("click", () => { setResTab("preview"); if (narrow()) window.scrollTo({ top: 0 }); });
+$("#backToEdit").addEventListener("click", () => {
+  if (narrow()) { setView("edit"); window.scrollTo({ top: 0 }); }
+  else $(".editor").scrollIntoView({ block: "start", behavior: "smooth" });
+});
+$("#hlToggle").addEventListener("change", e => { highlight = e.target.checked; refresh(); });
+const jdEl = $("#jdInput");
+jdEl.addEventListener("input", () => { state.jd = jdEl.value; persist(); });
+$("#sampleJd").addEventListener("click", () => { state.jd = jdEl.value = SAMPLE_JD; persist(); });
+$("#clearJd").addEventListener("click", () => { state.jd = jdEl.value = ""; persist(); });
+function addKw(kw) {
+  const cur = listItems(state.skills);
+  if (!cur.some(s => s.toLowerCase() === kw.toLowerCase())) state.skills = [...cur, kw].join(HEAD[state.lang].sep);
+  toast(`أُضيفت «${kw}» إلى المهارات`); persist(); if (formTab === "skills") renderForm();
+}
+$("#matchOut").addEventListener("click", e => { const c = e.target.closest("[data-add]"); if (c) addKw(c.dataset.add); });
+$("#hideBanner").addEventListener("click", () => { state.isSample = false; persist(); });
+function confirmBtn(btn, label, fn) {
+  if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; fn(); return; }
+  btn.dataset.orig = btn.textContent; btn.dataset.armed = "1"; btn.textContent = label;
+  setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; } }, 4000);
+}
+const resetTo = s => { state = s; aiSuggest = {}; jdEl.value = state.jd; save(); renderForm(); refresh(); };
+$("#startBlank").addEventListener("click", e => confirmBtn(e.currentTarget, "تأكيد: مسح المثال", () => { resetTo(blank()); toast("نموذج فارغ جاهز"); }));
+$("#clearAll").addEventListener("click", e => confirmBtn(e.currentTarget, "اضغط مرة أخرى للتأكيد", () => { resetTo(blank()); toast("تم مسح كل البيانات"); }));
+$("#loadSample").addEventListener("click", e => confirmBtn(e.currentTarget, "سيستبدل بياناتك؛ اضغط للتأكيد", () => { resetTo(sampleResume()); toast("تم تحميل المثال"); }));
+
+/* ---------- exports ---------- */
+const fileBase = () => {
+  const n = clean(state.personal.name).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "_") || (state.lang === "ar" ? "السيرة" : "Resume");
+  return n + (state.lang === "ar" ? "_السيرة_الذاتية" : "_Resume");
+};
+function saveFile(filename, data, mime) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: mime || "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast("تم تنزيل " + filename);
+}
+const xesc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+function docxXml(blocks, lang) {
+  const bidi = lang === "ar" ? "<w:bidi/>" : "";
+  const run = (t, o = {}) => `<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${o.b ? "<w:b/><w:bCs/>" : ""}${o.color ? `<w:color w:val="${o.color}"/>` : ""}${o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ""}</w:rPr><w:t xml:space="preserve">${xesc(t)}</w:t></w:r>`;
+  const para = (t, o = {}, r = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.keep ? "<w:keepNext/>" : ""}${o.list ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : ""}${bidi}<w:spacing w:before="${o.before || 0}" w:after="${o.after ?? 60}"/></w:pPr>${run(t, r)}</w:p>`;
+  const body = blocks.map(b => {
+    switch (b.t) {
+      case "name": return para(b.text, { style: "Title", after: 40 });
+      case "title": return para(b.text, { after: 40 }, { sz: 24, color: "333333" });
+      case "contact": return para(b.text, { after: 120 }, { sz: 19, color: "444444" });
+      case "h": return para(lang === "en" ? b.text.toUpperCase() : b.text, { style: "Heading1" });
+      case "role": return para(b.text, { before: 120, after: 0, keep: true }, { b: true, sz: 22 });
+      case "meta": return para(b.text, { after: 40, keep: true }, { sz: 20, color: "444444" });
+      case "li": return para(b.text, { list: true, after: 30 });
+      default: return para(b.text, { after: 60 });
+    }
+  }).join("");
+  return XML + `<w:document ${W_NS}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1008" w:right="1080" w:bottom="1008" w:left="1080" w:header="708" w:footer="708" w:gutter="0"/>${bidi}</w:sectPr></w:body></w:document>`;
+}
+const STYLES = lang => XML + `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="${lang === "ar" ? "ar-SA" : "en-US"}" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:bCs/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="333333"/></w:pBdr><w:spacing w:before="220" w:after="100"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:bCs/><w:sz w:val="23"/><w:szCs w:val="23"/></w:rPr></w:style></w:styles>`;
+const NUMBERING = XML + `<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="260"/></w:pPr><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" w:hint="default"/></w:rPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+async function buildDocx() {
+  const blocks = buildBlocks(state), z = new JSZip(), name = clean(state.personal.name);
+  z.file("[Content_Types].xml", XML + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`);
+  z.file("_rels/.rels", XML + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`);
+  z.file("word/_rels/document.xml.rels", XML + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>`);
+  z.file("docProps/core.xml", XML + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xesc((name ? name + " – " : "") + (state.lang === "ar" ? "السيرة الذاتية" : "Resume"))}</dc:title><dc:creator>${xesc(name)}</dc:creator></cp:coreProperties>`);
+  z.file("word/document.xml", docxXml(blocks, state.lang));
+  z.file("word/styles.xml", STYLES(state.lang));
+  z.file("word/numbering.xml", NUMBERING);
+  return z.generateAsync({ type: "blob", mimeType: DOCX_MIME });
+}
+const latin = s => String(s).replace(/[–—−]/g, "-").replace(/[‘’‛]/g, "'").replace(/[“”]/g, '"').replace(/…/g, "...").replace(/[•●▪]/g, "-").replace(/[  ]/g, " ").replace(/[^\x09\x0A\x0D\x20-\xFF]/g, "");
+function buildPdf() {
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "pt", format: "a4" }), W = 595.28, Hh = 841.89, M = 54, maxW = W - 2 * M;
+  let y = M;
+  const ensure = h => { if (y + h > Hh - M) { doc.addPage(); y = M; } };
+  const write = (t, o = {}) => {
+    const size = o.size || 10, lh = size * (o.lh || 1.38), ind = o.indent || 0;
+    doc.setFont("helvetica", o.bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(...(o.color || [18, 18, 18]));
+    doc.splitTextToSize(latin(t), maxW - ind).forEach((ln, k) => {
+      ensure(lh);
+      if (o.bullet && k === 0) { doc.setFillColor(18, 18, 18); doc.circle(M + 3, y + size * 0.62, 1.5, "F"); }
+      doc.text(ln, M + ind, y + size * 0.9); y += lh;
+    });
+    y += o.after || 0;
+  };
+  buildBlocks(state).forEach(b => {
+    switch (b.t) {
+      case "name": write(b.text, { size: 19, bold: true, lh: 1.2, after: 2 }); break;
+      case "title": write(b.text, { size: 11.5, color: [51, 51, 51], after: 2 }); break;
+      case "contact": write(b.text, { size: 9.5, color: [68, 68, 68], after: 4 }); break;
+      case "h": y += 9; ensure(40); write(b.text.toUpperCase(), { size: 10.5, bold: true, lh: 1.2 }); doc.setDrawColor(40); doc.setLineWidth(0.6); doc.line(M, y + 0.5, W - M, y + 0.5); y += 6; break;
+      case "role": y += 5; ensure(34); write(b.text, { size: 10.5, bold: true, lh: 1.3 }); break;
+      case "meta": write(b.text, { size: 9.5, color: [68, 68, 68], after: 2 }); break;
+      case "li": write(b.text, { indent: 12, bullet: true, after: 1 }); break;
+      default: write(b.text, { after: 3 });
+    }
+  });
+  const name = clean(state.personal.name);
+  doc.setProperties({ title: latin((name ? name + " - " : "") + "Resume"), author: latin(name), subject: latin(clean(state.personal.title)) });
+  return doc.output("blob");
+}
+const pdfPossible = () => state.lang === "en" && !/[؀-ۿ]/.test(plainText(buildBlocks(state), state.lang)) && !!window.jspdf;
+async function withBusy(btn, fn) { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+$("#dlDocx").addEventListener("click", e => withBusy(e.currentTarget, async () => {
+  if (!window.JSZip) return toast("تعذر تحميل مكتبة Word؛ أعد فتح الصفحة");
+  if (!buildBlocks(state).length) return toast("السيرة فارغة");
+  saveFile(fileBase() + ".docx", await buildDocx());
+}));
+$("#dlPdf").addEventListener("click", e => withBusy(e.currentTarget, async () => {
+  if (!window.jspdf) return toast("تعذر تحميل مكتبة PDF؛ أعد فتح الصفحة");
+  if (!pdfPossible()) return toast("ملف PDF هنا للسيرة الإنجليزية فقط. نزّل Word ثم احفظه PDF من داخل Word.");
+  saveFile(fileBase() + ".pdf", buildPdf());
+}));
+$("#dlTxt").addEventListener("click", () => saveFile(fileBase() + ".txt", plainText(buildBlocks(state), state.lang)));
+function copyText(text, okMsg) {
+  const fallback = () => {
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove(); toast(ok ? okMsg : "تعذر النسخ؛ حدّد النص وانسخه يدوياً");
+  };
+  try { navigator.clipboard.writeText(text).then(() => toast(okMsg), fallback); } catch (e) { fallback(); }
+}
+$("#copyTxt").addEventListener("click", () => copyText(plainText(buildBlocks(state), state.lang), "تم نسخ نص السيرة"));
+
+/* ---------- quick clean (no AI) ---------- */
+function quickClean() {
+  const before = JSON.stringify(state);
+  const fixLine = s => {
+    let t = s.replace(EMOJI_G, "").replace(/\s{2,}/g, " ").trim();
+    if (state.lang === "en") { t = t.replace(/^(i|we)\s+/i, ""); t = t.charAt(0).toUpperCase() + t.slice(1); }
+    else t = t.replace(/^(أنا|انا|نحن)\s+/, "");
+    return t.replace(/[.。]+$/, "");
+  };
+  const fixList = t => lines(t).map(fixLine).filter(Boolean).join("\n");
+  state.experience.forEach(e => { e.bullets = fixList(e.bullets); });
+  state.projects.forEach(p => { p.bullets = fixList(p.bullets); });
+  state.summary = (state.summary || "").replace(EMOJI_G, "").replace(/\s{2,}/g, " ").trim();
+  const seen = new Set();
+  state.skills = listItems(state.skills).map(s => s.replace(EMOJI_G, "").trim())
+    .filter(s => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase())).join(HEAD[state.lang].sep);
+  const changed = JSON.stringify(state) !== before;
+  persist(); renderForm();
+  toast(changed ? "تم التنظيف: الرموز، النقاط الزائدة، ضمير المتكلم، والمهارات المكررة" : "لا يوجد ما يحتاج تنظيفاً");
+}
+/* ---------- AI writing (Gemini) ---------- */
+const langName = () => state.lang === "ar" ? "Arabic" : "English";
+const jdPart = () => state.jd.trim() ? `\n\nTarget job description (use its keywords only where they fit the candidate):\n${state.jd.trim().slice(0, 4000)}` : "";
+async function aiBullets(i, btn) {
+  const ex = state.experience[i]; if (!ex) return;
+  if (!clean(ex.title)) return toast("اكتب المسمى الوظيفي لهذه الخبرة أولاً");
+  const notes = lines(ex.bullets);
+  const res = await askJson(`You are an expert resume writer. Write ATS-friendly achievement bullet points for this job.
+Job title: ${clean(ex.title)}
+Company: ${clean(ex.company) || "not given"}
+Location: ${clean(ex.location) || "not given"}
+Dates: ${dateRange(ex.start, ex.end, ex.current, "en") || "not given"}${ex.current ? " (current role)" : ""}
+Candidate's target title: ${clean(state.personal.title) || "not given"}
+${notes.length ? `The candidate's own notes about what they did. Keep every fact and turn them into strong bullets:\n${notes.map(n => "- " + n).join("\n")}` : "The candidate gave no notes. Write realistic, typical achievements for exactly this role."}${jdPart()}
+Rules:
+- ${notes.length ? "One bullet per note, at most 4 bullets in total; merge similar notes." : "3 to 4 bullets."}
+- Start each bullet with a strong action verb (${ex.current ? "present tense allowed for this current role" : "past tense"}).
+- Keep them short and direct: one line each, 8 to 16 words, no filler, no first-person pronouns, no emoji, no ending period.
+- Use no numbers, percentages, amounts or placeholders${notes.length ? ", except numbers the candidate wrote in the notes" : " at all"}. Describe the impact in words instead, for example faster turnaround, fewer errors or better customer satisfaction.
+- Never invent tools, clients or awards.
+- Make the skill behind each bullet visible (for example "using Excel" or "by coordinating with other teams"), so recruiters see what the candidate can do.
+- Also list the skills gained in this job: 4 to 8 short, standard skill names (hard skills and tools first, then soft skills), only ones clearly supported by the bullets or notes.
+Write in ${langName()}.
+Reply with only a JSON object: {"bullets": ["..."], "skills": ["..."]}`, btn);
+  const toList = v => Array.isArray(v) ? v.map(String).map(s => s.trim()).filter(Boolean) : [];
+  const bl = toList(res && res.bullets), have = new Set(listItems(state.skills).map(s => s.toLowerCase()));
+  const sk = [...new Set(toList(res && res.skills))].filter(s => !have.has(s.toLowerCase()));
+  if (bl.length) { aiSuggest[ex.id] = { bullets: bl, skills: sk }; renderForm(); }
+  else if (res) toast("لم يصل اقتراح صالح؛ حاول مرة أخرى");
+}
+async function aiSummary(btn) {
+  const text = plainText(buildBlocks({ ...state, summary: "" }), state.lang);
+  if (!state.experience.some(e => clean(e.title)) && !listItems(state.skills).length) return toast("أضف خبراتك أو مهاراتك أولاً ليُكتب ملخص دقيق");
+  const res = await askJson(`Write a professional summary for this resume in ${langName()}.
+Rules: 3 sentences, 40 to 70 words, no first-person pronouns. Mention the target title and years of experience if known, the most relevant hard skills, and one concrete result taken from the resume. Do not invent facts or numbers. Ignore placeholders like [X%] or [N].${jdPart()}
+
+Resume:
+${text.slice(0, 9000)}
+
+Reply with only a JSON object: {"summary": "..."}`, btn);
+  if (res && typeof res.summary === "string" && res.summary.trim()) { aiSuggest.summary = res.summary.trim(); renderForm(); }
+  else if (res) toast("لم يصل اقتراح صالح؛ حاول مرة أخرى");
+}
+
+$("#quickClean").addEventListener("click", quickClean);
+$("#checks").addEventListener("click", e => { if (e.target.closest('[data-fix="clean"]')) quickClean(); });
+
+/* ================= CO-OP: ready job searches + cover letter ================= */
+const COOP_KEY = "ats-coop-v1";
+const blankCoop = () => ({ major: "", city: "", university: "", start: "", duration: "", lang: "ar", cover: "", coverEdited: false });
+let coop = (() => { try { return Object.assign(blankCoop(), JSON.parse(store.get(COOP_KEY) || "{}")); } catch (e) { return blankCoop(); } })();
+const saveCoop = () => store.set(COOP_KEY, JSON.stringify(coop));
+
+/* Job sites offer no public search API for this, so the site builds the search links and the student applies there. */
+function jobLinks() {
+  const enc = encodeURIComponent, major = (coop.major || "").trim(), city = (coop.city || "").trim();
+  const li = `https://www.linkedin.com/jobs/search/?keywords=${enc(`"${major}" (co-op OR coop OR internship OR "تدريب تعاوني")`)}`
+    + `&location=${enc(city ? `${city}, Saudi Arabia` : "Saudi Arabia")}&f_E=1&f_TPR=r2592000&sortBy=DD`; // internship level, last 30 days, newest first
+  return [
+    ["LinkedIn: تقديم بضغطة (Easy Apply)", li + "&f_AL=true", true],
+    ["LinkedIn: كل فرص التدريب", li],
+    ["وظائف Google", `https://www.google.com/search?q=${enc(`تدريب تعاوني ${major} ${city}`.trim())}&ibp=htl;jobs`]
+  ];
+}
+function renderJobLinks() {
+  const ready = !!(coop.major || "").trim();
+  $("#jobLinks").innerHTML = jobLinks().map(([label, href, primary]) =>
+    `<a class="btn${primary ? " primary" : ""}" href="${ready ? esc(href) : "#"}" target="_blank" rel="noopener"${ready ? "" : ' aria-disabled="true" tabindex="-1"'}>${esc(label)}</a>`).join("")
+    + (ready ? "" : `<span class="status-line">اكتب تخصصك أولاً</span>`);
+}
+
+// A general cover letter built from the CV, with no company name, so it fits any application.
+function coverLetter() {
+  const P = state.personal, ar = coop.lang !== "en";
+  const name = clean(P.name) || (ar ? "[اسمك]" : "[Your name]"), major = (coop.major || "").trim() || (ar ? "[تخصصك]" : "[your major]");
+  const uni = (coop.university || "").trim(), start = (coop.start || "").trim(), dur = (coop.duration || "").trim();
+  const skills = listItems(state.skills).slice(0, 4);
+  const sign = [clean(P.name), clean(P.phone), clean(P.email), clean(P.linkedin)].filter(Boolean).join("\n");
+  if (ar) return [
+    "السلام عليكم ورحمة الله وبركاته،",
+    "فريق التوظيف المحترمين،",
+    `أنا ${name}، أدرس تخصص ${major}${uni ? ` في ${uni}` : ""}، وأرغب في الانضمام إلى برنامج التدريب التعاوني لديكم${start ? ` بدءاً من ${start}` : ""}${dur ? ` لمدة ${dur}` : ""}.`,
+    skills.length ? `أمتلك مهارات في ${skills.join("، ")}، وأتطلع إلى تطبيقها واكتساب خبرة عملية في بيئة عملكم.` : "أتطلع إلى اكتساب خبرة عملية في بيئة عملكم والمساهمة في مهام الفريق.",
+    "أرفقت لكم سيرتي الذاتية، ويسعدني تزويدكم بأي معلومات إضافية أو إجراء مقابلة في الوقت المناسب لكم.",
+    `شاكر لكم وقتكم واهتمامكم،${sign ? "\n" + sign : ""}`
+  ].join("\n\n");
+  return [
+    "Dear Hiring Team,",
+    `My name is ${name}, and I am a ${major} student${uni ? ` at ${uni}` : ""}. I am writing to apply for your cooperative training (co-op) program${start ? `, starting ${start}` : ""}${dur ? ` for ${dur}` : ""}.`,
+    skills.length ? `I have skills in ${skills.join(", ")}, and I am eager to apply them and gain practical experience with your team.` : "I am eager to gain practical experience and contribute to your team.",
+    "Please find my CV attached. I would be glad to provide any further information or to meet at your convenience.",
+    `Thank you for your time and consideration.\n\nBest regards,${sign ? "\n" + sign : ""}`
+  ].join("\n\n");
+}
+function renderCover() {
+  const t = $("#coverText");
+  t.value = coop.coverEdited ? coop.cover : coverLetter();
+  t.dir = coop.lang === "en" ? "ltr" : "rtl";
+}
+function fillCoopForm() {
+  ["university", "start", "duration", "lang"].forEach(k => { const el = $("#cp-" + k); if (el) el.value = coop[k] ?? ""; });
+  $("#job-major").value = coop.major || ""; $("#job-city").value = coop.city || "";
+  renderJobLinks(); renderCover();
+}
+$("#job-major").addEventListener("input", e => { coop.major = e.target.value; saveCoop(); renderJobLinks(); renderCover(); });
+$("#job-city").addEventListener("input", e => { coop.city = e.target.value; saveCoop(); renderJobLinks(); });
+$("#coverForm").addEventListener("input", e => { const k = e.target.dataset.cp; if (!k) return; coop[k] = e.target.value; saveCoop(); renderCover(); });
+$("#coverText").addEventListener("input", e => { coop.cover = e.target.value; coop.coverEdited = true; saveCoop(); });
+$("#resetCover").addEventListener("click", () => { coop.cover = ""; coop.coverEdited = false; saveCoop(); renderCover(); toast("أُعيدت كتابة الرسالة من بياناتك"); });
+$("#copyCover").addEventListener("click", () => copyText($("#coverText").value, "تم نسخ الرسالة"));
+$("#dlCv").addEventListener("click", e => withBusy(e.currentTarget, async () => {
+  if (!window.JSZip) return toast("تعذر تحميل مكتبة Word؛ أعد فتح الصفحة");
+  if (!buildBlocks(state).length) return toast("السيرة فارغة؛ أكملها في قسم السيرة الذاتية");
+  saveFile(fileBase() + ".docx", await buildDocx());
+}));
+fillCoopForm();
+
+/* ================= BACKUP ================= */
+/* A backup holds the CV and the co-op form. The Gemini key is never included. */
+const BACKUP_APP = "ats-cv";
+// Copy only the keys the template knows, coerced to the template's types, so a hand-edited file cannot break the page.
+function shape(tpl, v) {
+  const o = { ...tpl };
+  if (v && typeof v === "object") for (const k in tpl) {
+    if (!(k in v)) continue;
+    o[k] = typeof tpl[k] === "boolean" ? !!v[k] : typeof tpl[k] === "string" ? String(v[k] ?? "") : typeof tpl[k] === "number" ? (Number(v[k]) || tpl[k]) : tpl[k];
+  }
+  return o;
+}
+const shapeList = (v, mk) => Array.isArray(v) ? v.filter(x => x && typeof x === "object").map(x => shape(mk(), x)) : [];
+$("#backupSave").addEventListener("click", () => {
+  const data = { app: BACKUP_APP, version: 1, savedAt: new Date().toISOString(), cv: state, coop };
+  const who = clean(state.personal.name).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "_");
+  saveFile(`CV-backup${who ? "_" + who : ""}_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2), "application/json");
+});
+$("#backupLoad").addEventListener("click", e => confirmBtn(e.currentTarget, "سيستبدل بياناتك الحالية؛ اضغط لاختيار الملف", () => $("#backupFile").click()));
+$("#backupFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch (err) { return toast("الملف ليس نسخة احتياطية صالحة"); }
+  if (!data || data.app !== BACKUP_APP || !data.cv || typeof data.cv.personal !== "object") return toast("هذا الملف ليس نسخة احتياطية من منشئ سيرة ATS");
+  const cv = data.cv, b = blank();
+  const next = {
+    ...shape({ ...b, personal: undefined, experience: undefined, education: undefined, projects: undefined }, cv),
+    lang: cv.lang === "ar" ? "ar" : "en", isSample: false,
+    personal: shape(b.personal, cv.personal),
+    experience: shapeList(cv.experience, newExp), education: shapeList(cv.education, newEdu), projects: shapeList(cv.projects, newProj)
+  };
+  if (!next.experience.length) next.experience.push(newExp());
+  if (!next.education.length) next.education.push(newEdu());
+  resetTo(next);
+  if (data.coop && typeof data.coop === "object") {
+    coop = { ...shape(blankCoop(), data.coop), lang: data.coop.lang === "en" ? "en" : "ar" };
+    saveCoop(); fillCoopForm();
+  }
+  toast("تم استرجاع النسخة الاحتياطية");
+});
+
+/* ================= SETTINGS + NAV ================= */
+$("#setKey").value = settings.apiKey; $("#setModel").value = settings.model; $("#setModel").placeholder = CONFIG.DEFAULT_MODEL;
+$("#saveKey").addEventListener("click", () => { settings.apiKey = $("#setKey").value.trim(); settings.model = $("#setModel").value.trim(); saveSettings(); $("#keyStatus").textContent = settings.apiKey ? "تم الحفظ" : "المفتاح فارغ"; });
+$("#delKey").addEventListener("click", () => { settings.apiKey = ""; $("#setKey").value = ""; saveSettings(); $("#keyStatus").textContent = "تم حذف المفتاح من هذا المتصفح"; });
+$("#testKey").addEventListener("click", async e => {
+  settings.apiKey = $("#setKey").value.trim(); settings.model = $("#setModel").value.trim(); saveSettings();
+  const st = $("#keyStatus"); st.textContent = "جارٍ الاختبار…";
+  await withBusy(e.currentTarget, async () => {
+    try { await gemini("Reply with the single word OK."); st.textContent = "المفتاح يعمل. أزرار الذكاء الاصطناعي جاهزة."; }
+    catch (err) { st.textContent = err.code === "no_key" ? "الصق المفتاح أولاً" : err.code === "bad_key" ? "المفتاح غير صحيح" : err.code === "rate_limited" ? "المفتاح صحيح لكن الطلبات كثيرة؛ حاول بعد دقيقة" : err.code === "daily_limit" ? "المفتاح صحيح لكن انتهت حصة اليوم" : err.code === "quota_zero" ? "المفتاح صحيح لكن النموذج غير متاح مجاناً؛ امسح خانة النموذج" : err.code === "bad_model" ? "اسم النموذج غير متاح؛ امسح خانة النموذج" : "تعذر الاختبار؛ تحقق من الإنترنت"; }
+  });
+});
+const SECS = ["cv", "coop", "settings"];
+let currentSec = "cv";
+function setSection(s) {
+  if (!SECS.includes(s)) s = "cv";
+  currentSec = s;
+  SECS.forEach(k => $("#sec-" + k).hidden = k !== s);
+  document.querySelectorAll("#mainNav [data-sec]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sec === s)));
+  store.set("ats-sec", s);
+  if (s === "coop") renderCover();
+  window.scrollTo({ top: 0 });
+}
+$("#mainNav").addEventListener("click", e => { const b = e.target.closest("[data-sec]"); if (b) setSection(b.dataset.sec); });
+document.addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) setSection(g.dataset.goto); });
+
+/* ---------- boot ---------- */
+jdEl.value = state.jd || "";
+renderForm();
+refresh();
+const hashSec = location.hash.replace("#", "");
+setSection(SECS.includes(hashSec) ? hashSec : store.get("ats-sec") || "cv");
+})();
+</script>
+</body>
+</html>

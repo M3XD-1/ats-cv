@@ -1,0 +1,2 @@
+# The CSP hash in index.html depends on exact bytes; keep LF everywhere.
+* text eol=lf
